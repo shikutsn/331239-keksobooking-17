@@ -11,31 +11,39 @@
   };
 
 
-  var mapContainer = document.querySelector('.map');
-  mapContainer.classList.remove('map--faded');
+  var renderPin = function (pin, template) {
+    var pinEl = template.cloneNode(true);
 
+    pinEl.style.cssText = 'left: ' + pin.location.x + 'px; top: ' + pin.location.y + 'px;';
+    pinEl.src = pin.author.avatar;
+    pinEl.alt = 'заголовок объявления';
 
-  var announcementTemplate = document.querySelector('#pin')
-      .content
-      .querySelector('.map__pin');
-
-  var renderAnnouncement = function (announcement) {
-    var announcementElement = announcementTemplate.cloneNode(true);
-
-    announcementElement.style.cssText = 'left: ' + announcement.location.x + 'px; top: ' + announcement.location.y + 'px;';
-    console.log('left: ' + announcement.location.x + 'px; top: ' + announcement.location.y + 'px;');
-    announcementElement.src = announcement.author.avatar;
-    announcementElement.alt = 'заголовок объявления';
-
-    return announcementElement;
+    return pinEl;
   };
 
-  var fragment = document.createDocumentFragment();
-  for (var i = 0; i < window.data.announcements.length; i++) {
-    fragment.appendChild(renderAnnouncement(window.data.announcements[i]));
-  }
+  var fillFragment = function (pins, template) {
+    var fragment = document.createDocumentFragment();
 
-  var picturesContainer = document.querySelector('.map__pins');
-  picturesContainer.appendChild(fragment);
+    for (var i = 0; i < pins.length; i++) {
+      fragment.appendChild(renderPin(pins[i], template));
+    }
 
+    return fragment;
+  };
+
+  var renderMapPins = function (pins) {
+    // пока что нет поправки на ширину пинов
+    var pinTemplate = document.querySelector('#pin')
+      .content
+      .querySelector('.map__pin');
+    var fragment = fillFragment(pins, pinTemplate);
+    var pinsEl = document.querySelector('.map__pins');
+
+    pinsEl.appendChild(fragment);
+  };
+
+
+  window.map = {
+    renderMapPins: renderMapPins
+  };
 })();
