@@ -12,6 +12,14 @@
     return arr[getRandomNumber(0, arr.length)];
   };
 
+  var disableElement = function (it) {
+    it.disabled = true;
+  };
+
+  var enableElement = function (it) {
+    it.disabled = false;
+  };
+
   var shuffleArray = function (arr) {
     // перемешивание алгоритмом Фишера — Йетса
     var result = arr.slice();
@@ -41,6 +49,8 @@
   window.util = {
     getRandomNumber: getRandomNumber,
     getRandomArrayElement: getRandomArrayElement,
+    disableElement: disableElement,
+    enableElement: enableElement,
     shuffleArray: shuffleArray,
     debounce: debounce
   };

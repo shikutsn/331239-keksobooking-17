@@ -44,6 +44,8 @@
   };
 
   // window.data.getMockData(onLoadingSuccess);
+
+  // данные загружать, но не рисовать до клика по главному пину что ли?
   window.backend.load(DOWNLOAD_URL, onLoadingSuccess, onLoadingError);
-  // window.map.setMapInactive();
+  window.map.setMapInactive();
 })();
