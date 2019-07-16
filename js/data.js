@@ -11,7 +11,7 @@
       MIN: 0,
       MAX: 1200
     }
-  }
+  };
 
   var APARTMENT_TYPES = [
     'palace',
@@ -33,14 +33,14 @@
         x: window.util.getRandomNumber(PinData.ABSCISS.MIN, PinData.ABSCISS.MAX + 1),
         y: window.util.getRandomNumber(PinData.ORDINATE.MIN, PinData.ORDINATE.MAX + 1)
       }
-    }
+    };
   };
 
   var getPins = function (quantity) {
     var output = [];
 
     for (var i = 0; i < quantity; i++) {
-     output.push(getRandomPin(i));
+      output.push(getRandomPin(i));
     }
 
     return output;

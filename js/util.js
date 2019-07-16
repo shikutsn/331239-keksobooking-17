@@ -22,6 +22,8 @@
 
   var shuffleArray = function (arr) {
     // перемешивание алгоритмом Фишера — Йетса
+    // TODO: а понадобится ли оно?
+    // TODO: а будет ли работать этот туду?
     var result = arr.slice();
     for (var i = result.length - 1; i > 0; i--) {
       var j = getRandomNumber(0, i + 1);

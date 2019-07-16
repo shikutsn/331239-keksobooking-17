@@ -41,6 +41,7 @@
     // после загрузки делаем карту активной
     // но пока что не делаем
     // window.map.setMapActive();
+    // TODO: сделать трали-вали
   };
 
   // window.data.getMockData(onLoadingSuccess);
