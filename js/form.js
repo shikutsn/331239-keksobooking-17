@@ -40,24 +40,33 @@
     },
   };
 
+  var RoomCountValidationData = {
+    '100': {
+      CORRECT_VALUES: ['0'],
+      INVALID_TEXT: 'Для выбранного числа комнат допустимо только значение "Не для гостей".'
+    },
+    '3': {
+      CORRECT_VALUES: ['3', '2', '1'],
+      INVALID_TEXT: 'Для выбранного числа комнат допустимы значения "Количество мест: для 3, 2, 1 гостей".'
+    },
+    '2': {
+      CORRECT_VALUES: ['2', '1'],
+      INVALID_TEXT: 'Для выбранного числа комнат допустимы значения "Количество мест: для 2, 1 гостей".'
+    },
+    '1': {
+      CORRECT_VALUES: ['1'],
+      INVALID_TEXT: 'Для выбранного числа комнат допустимы значения "Количество мест: для одного гостя".'
+    }
+  };
+
 
   var adFormEl = document.querySelector('.ad-form');
-  // заголовок объявления
   var titleEl = adFormEl.querySelector('#title');
-  // тип жилья (селект)
   var typeEl = adFormEl.querySelector('#type');
-  // цена за ночь
   var priceEl = adFormEl.querySelector('#price');
-  // адрес (ручное редактирование запрещено)
-  var addressEl = adFormEl.querySelector('#address');
-  // Поля «Время заезда» и «Время выезда» синхронизированы: при изменении значения одного поля,
-  // во втором выделяется соответствующее ему. Например, если время заезда указано «после 14»,
-  // то время выезда будет равно «до 14» и наоборот.
   var timeinEl = adFormEl.querySelector('#timein');
   var timeoutEl = adFormEl.querySelector('#timeout');
-  // число комнат
   var roomCountEl = adFormEl.querySelector('#room_number');
-  // число гостей
   var capacityEl = adFormEl.querySelector('#capacity');
 
 
@@ -67,7 +76,6 @@
   };
 
   var setTitleFieldState = function (titleField, isValid) {
-    // TODO возможно, чтобы не плодить такие фукнции для каждого поля, надо посмотреть, получится ли сделать универсальную
     if (isValid) {
       titleField.setCustomValidity('');
       titleField.style[InvalidFieldStyles.VALIDITY] = InvalidFieldStyles.VALID;
@@ -78,7 +86,6 @@
   };
 
   var validateTitleField = function () {
-    // TODO да и функции валидации полей тоже больно похожи. Сделать универсальную
     var result = isTitleFieldValid(titleEl);
     setTitleFieldState(titleEl, result);
     return result;
@@ -97,7 +104,7 @@
       var minPrice = getMinPricePerNight();
       var invalidText = '';
       if (minPrice) {
-        invalidText += PriceFieldValidationData.INVALID_TEXT.MIN + minPrice + '. '
+        invalidText = PriceFieldValidationData.INVALID_TEXT.MIN + minPrice + '. ';
       }
       invalidText += PriceFieldValidationData.INVALID_TEXT.MAX;
       priceField.setCustomValidity(invalidText);
@@ -113,60 +120,62 @@
 
   var onTypeFieldChange = function () {
     priceEl.placeholder = TypeFieldValidationData[typeEl.value].MIN_PRICE;
-    // так как параметры изменились, надо вручную проверить, что поле цены валидно
+    // так как параметры типа апартаментов изменились, надо вручную проверить, что поле цены валидно
     validatePriceField();
-    // TODO: уточнить, хорошая ли это практика - вручную вызывать события
-    // var event = new Event('input');
-    // priceEl.dispatchEvent(event);
   };
 
   var getMinPricePerNight = function () {
     return TypeFieldValidationData[typeEl.value].MIN_PRICE;
   };
 
-  // моки функций остальной валидации
-  var validateAddressField = function () {
-    return true;
+  var onTimeinFieldChange = function () {
+    timeoutEl.selectedIndex = timeinEl.selectedIndex;
   };
 
-  var validateTimeinField = function () {
-    return true;
+  var onTimeoutFieldChange = function () {
+    timeinEl.selectedIndex = timeoutEl.selectedIndex;
   };
 
-  var validateTimeoutField = function () {
-    return true;
+  var isCapacityFieldValid = function () {
+    return RoomCountValidationData[roomCountEl.value].CORRECT_VALUES.some(function (it) {
+      return it === capacityEl.value;
+    });
   };
 
-  var validateRoomCountField = function () {
-    return true;
+  var setCapacityFieldState = function (capacityField, isValid) {
+    if (isValid) {
+      capacityField.setCustomValidity('');
+      capacityField.style[InvalidFieldStyles.VALIDITY] = InvalidFieldStyles.VALID;
+    } else {
+      capacityField.setCustomValidity(RoomCountValidationData[roomCountEl.value].INVALID_TEXT);
+      capacityField.style[InvalidFieldStyles.VALIDITY] = InvalidFieldStyles.INVALID;
+    }
   };
 
-  var validateCapacityField = function () {
-    return true;
+  var onAccomodationChange = function () {
+    var result = isCapacityFieldValid();
+    setCapacityFieldState(capacityEl, result);
+    return result;
   };
 
   var validateForm = function () {
-    // TODO: пока что тоже скелет структуры валидации
-    return (validateTitleField()
-      && validatePriceField()
-      && validateAddressField()
-      && validateTimeinField()
-      && validateTimeoutField()
-      && validateRoomCountField()
-      && validateCapacityField());
+    return (validateTitleField() && validatePriceField());
   };
 
 
-  // TODO: пока что просто аое повторяю структуру из кекстаграмма
-  // TODO: возможно, тут и другие события нужны будут, не инпут. Особенно на селектах
   titleEl.addEventListener('input', validateTitleField);
-  typeEl.addEventListener('change', onTypeFieldChange);
   priceEl.addEventListener('input', validatePriceField);
-  addressEl.addEventListener('input', validateAddressField);
-  timeinEl.addEventListener('input', validateTimeinField);
-  timeoutEl.addEventListener('input', validateTimeoutField);
-  roomCountEl.addEventListener('input', validateRoomCountField);
-  capacityEl.addEventListener('input', validateCapacityField);
+  typeEl.addEventListener('change', onTypeFieldChange);
+  timeinEl.addEventListener('change', onTimeinFieldChange);
+  timeoutEl.addEventListener('change', onTimeoutFieldChange);
+  capacityEl.addEventListener('change', onAccomodationChange);
+  roomCountEl.addEventListener('change', onAccomodationChange);
+  // похоже, надо один раз вызвать обработчик события change поля количества комннт,
+  // потому что в разметке указано несоответствующее ТЗ значение
+  onAccomodationChange();
+  // ну и разок вызвать валидацию поля цены (потому что при дефолтном значении "квартира")
+  // дефолтное значение ноль - не подходит
+  validatePriceField();
 
   // TODO: непосредственно функция отправки объявления, пока что мок
 
