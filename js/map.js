@@ -13,7 +13,7 @@
     X: -31,
     Y: -31
   };
-
+  var DOWNLOAD_URL = 'https://js.dump.academy/keksobooking/data';
 
   var getAdjustedPinCoords = function (coord) {
     // подразумеваю, что в данных хранятся координаты, на которые указывает острие пина
@@ -78,6 +78,9 @@
     adFormEl.classList.add('ad-form--disabled');
     adFormInnerEls.forEach(window.util.disableElement);
     filtersFormInnerEls.forEach(window.util.disableElement);
+    // первоначальное заполнение поля адреса при еще неактивной странице
+    // в начале же он круглый, поэтому там другие смещения
+    fillAddress(mainPinEl, MainPinPointerInitialOffset);
   };
 
   var setMapActive = function () {
@@ -90,8 +93,55 @@
 
   var mainPinEl = mapEl.querySelector('.map__pin--main');
 
+  var onLoadingError = function (errorMessage) {
+    // посмотреть, возможно, тут другая верстка сообщения о сетевой ошибке
+    // TODO: Если при отправке данных произошла ошибка запроса, покажите соответствующее сообщение в блоке main, используя блок #error из шаблона template
+    var node = document.createElement('div');
+    node.style = 'z-index: 100; margin: 0 auto; text-align: center; background-color: red;';
+    node.style.position = 'absolute';
+    node.style.padding = '20px';
+    node.style.width = '100%';
+    node.style.left = 0;
+    node.style.fontSize = '30px';
+
+    node.textContent = errorMessage;
+    document.body.insertAdjacentElement('afterbegin', node);
+  };
+
+  var onLoadingSuccess = function (pins) {
+    window.data.pins = pins;
+
+    // отладка в левом верхнем углу
+    console.log(window.data.pins);
+    window.data.pins[0].location.x = 1;
+    window.data.pins[0].location.y = 130;
+    console.log(window.data.pins);
+    // ---------------
+
+
+    // window.data.discussedPhotos = [];
+    window.map.renderMapPins(pins);
+    // window.filters.showFiltersForm();
+
+    // временно для 4-го задания
+    // document.querySelector('.map').classList.remove('map--faded');
+    // document.querySelector('.map--faded .map__filters').opacity = 1;
+    // ------------------
+
+    // после загрузки делаем карту активной
+    // но пока что не делаем
+    // window.map.setMapActive();
+  };
+
+  // window.data.getMockData(onLoadingSuccess);
+
+  // данные загружать, но не рисовать до клика по главному пину что ли?
+  // а проще загружать после клика по главному пину
+
   mainPinEl.addEventListener('click', function () {
     setMapActive();
+    // Полный список похожих объявлений загружается после перехода страницы в активное состояние
+    window.backend.download(DOWNLOAD_URL, onLoadingSuccess, onLoadingError);
   });
 
   var fillAddress = function (pin, offset) {
@@ -101,10 +151,6 @@
     // потому что изначальное смещение - отрицательное, то есть для случая (2)
     addressEl.value = (pin.offsetLeft - offset.X) + ', ' + (pin.offsetTop - offset.Y);
   };
-
-
-  // первоначальное заполнение поля адреса
-  fillAddress(mainPinEl, MainPinPointerInitialOffset);
 
   // document.querySelector('.promo img').style.position = 'absolute';
   // document.querySelector('.promo img').style.left = mainPinEl.offsetLeft + 'px';
