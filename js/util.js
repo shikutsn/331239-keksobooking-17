@@ -2,6 +2,7 @@
 
 (function () {
   var DEBOUNCE_INTERVAL = 500;
+  var ESC_KEYCODE = 27;
 
   var getRandomNumber = function (min, max) {
     // случайное целое число из полуинтервала [min, max)
@@ -9,6 +10,7 @@
   };
 
   var getRandomArrayElement = function (arr) {
+    // FIX: нужно ли оно в кексобукинге?
     return arr[getRandomNumber(0, arr.length)];
   };
 
@@ -23,7 +25,6 @@
   var shuffleArray = function (arr) {
     // перемешивание алгоритмом Фишера — Йетса
     // TODO: а понадобится ли оно?
-    // TODO: а будет ли работать этот туду?
     var result = arr.slice();
     for (var i = result.length - 1; i > 0; i--) {
       var j = getRandomNumber(0, i + 1);
@@ -48,13 +49,18 @@
     };
   };
 
+  var isEscPressed = function (evt) {
+    return evt.keyCode === ESC_KEYCODE;
+  };
+
   window.util = {
     getRandomNumber: getRandomNumber,
     getRandomArrayElement: getRandomArrayElement,
     disableElement: disableElement,
     enableElement: enableElement,
     shuffleArray: shuffleArray,
-    debounce: debounce
+    debounce: debounce,
+    isEscPressed: isEscPressed
   };
 
 })();

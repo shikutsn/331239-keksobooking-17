@@ -1,14 +1,19 @@
 'use strict';
 
 (function () {
+  // перекинуть все объявления переменных в начало
   var UPLOAD_URL = 'https://js.dump.academy/keksobooking';
-
+  var FILE_TYPES = ['gif', 'jpg', 'jpeg', 'png'];
+  var ApartmentImageData = {
+    ALT_TEXT: 'Фотография жилья',
+    WIDTH: '70',
+    HEIGHT: '70'
+  };
   var InvalidFieldStyles = {
     VALIDITY: 'outline',
     INVALID: '3px dashed red',
     VALID: 'none'
   };
-
   var TitleFieldValidationData = {
     LENGTH: {
       MIN: 30,
@@ -16,7 +21,6 @@
     },
     INVALID_TEXT: 'Не меньше 30 и не больше 100 символов.'
   };
-
   var PriceFieldValidationData = {
     MAX_VALUE: 1000000,
     INVALID_TEXT: {
@@ -24,7 +28,6 @@
       MIN: 'Не меньше '
     }
   };
-
   var TypeFieldValidationData = {
     'bungalo': {
       MIN_PRICE: 0
@@ -39,7 +42,6 @@
       MIN_PRICE: 10000
     },
   };
-
   var RoomCountValidationData = {
     '100': {
       CORRECT_VALUES: ['0'],
@@ -93,7 +95,7 @@
 
   var isPriceFieldValid = function (priceField) {
     var minPrice = getMinPricePerNight();
-    return priceField.value >= minPrice && priceField.value <= PriceFieldValidationData.MAX_VALUE;
+    return priceField.value > minPrice && priceField.value <= PriceFieldValidationData.MAX_VALUE;
   };
 
   var setPriceFieldState = function (priceField, isValid) {
@@ -165,19 +167,23 @@
 
   titleEl.addEventListener('input', validateTitleField);
   priceEl.addEventListener('input', validatePriceField);
+
   typeEl.addEventListener('change', onTypeFieldChange);
   timeinEl.addEventListener('change', onTimeinFieldChange);
   timeoutEl.addEventListener('change', onTimeoutFieldChange);
   capacityEl.addEventListener('change', onAccomodationChange);
   roomCountEl.addEventListener('change', onAccomodationChange);
+
   // похоже, надо один раз вызвать обработчик события change поля количества комннт,
   // потому что в разметке указано несоответствующее ТЗ значение
+  // TODO: похоже, все эти три ручных вызова надо будет класть в обновление формы нового объявления
   onAccomodationChange();
   // ну и разок вызвать валидацию поля цены (потому что при дефолтном значении "квартира")
   // дефолтное значение ноль - не подходит
   validatePriceField();
+  onTypeFieldChange();
 
-  // TODO: непосредственно функция отправки объявления, пока что мок
+  // TODO: доделать потом, потому что нужно понимать, как работает показ карточек и тд, чтобы успешно чистить все это при отправке
 
   var uploadSuccess = function () {
     // closeImgEditWindow();
@@ -260,4 +266,64 @@
       window.backend.upload(UPLOAD_URL, uploadData, uploadSuccess, uploadError);
     }
   });
+
+  var loadImgFromDisc = function (fileEl, imageEl) {
+    var file = fileEl.files[0];
+    if (file) {
+      var fileName = file.name.toLowerCase();
+
+
+      var matches = FILE_TYPES.some(function (it) {
+        return fileName.endsWith(it);
+      });
+
+      if (matches) {
+        var reader = new FileReader();
+
+        reader.addEventListener('load', function () {
+          imageEl.src = reader.result;
+        });
+
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  var avatarFileEl = adFormEl.querySelector('#avatar');
+  var avatarImageEl = adFormEl.querySelector('.ad-form-header__preview img');
+  var photoContainerEl = adFormEl.querySelector('.ad-form__photo-container');
+  var photoFileEl = photoContainerEl.querySelector('#images');
+  var photoEl = photoContainerEl.querySelector('.ad-form__photo');
+
+
+  avatarFileEl.addEventListener('change', function () {
+    loadImgFromDisc(avatarFileEl, avatarImageEl);
+  });
+
+  var createImage = function () {
+    var imageEl = document.createElement('img');
+
+    imageEl.alt = ApartmentImageData.ALT_TEXT;
+    imageEl.width = ApartmentImageData.WIDTH;
+    imageEl.height = ApartmentImageData.HEIGHT;
+
+    return imageEl;
+  };
+
+  photoFileEl.addEventListener('change', function () {
+    // TODO реализивать просмотр полноэкранных фоток и их упорядочивание перетаскиванием
+    // TODO на самом деле перетаскивание тоже пока что не поддерживается
+    // TODO да и аватарку перетащить нельзя
+    if (!photoContainerEl.querySelector('.ad-form__photo img')) {
+      photoEl.remove();
+    }
+
+    var imageEl = createImage();
+    loadImgFromDisc(photoFileEl, imageEl);
+    var newImageEl = photoEl.cloneNode(true);
+    newImageEl.insertAdjacentElement('afterbegin', imageEl);
+    photoContainerEl.insertAdjacentElement('beforeend', newImageEl);
+  });
+  // TODO При сбросе формы, страница возвращается в исходное неактивное состояние и метка перемещается на изначальные координаты. Соответствующее значение поля ввода адреса так же должно быть обновлено.
+
 })();

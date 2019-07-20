@@ -14,6 +14,22 @@
     Y: -31
   };
   var DOWNLOAD_URL = 'https://js.dump.academy/keksobooking/data';
+  var MapStates = {
+    ACTIVE: 'active',
+    INACTIVE: 'inactive'
+  };
+  var MapStatesMap = {
+    'active': {
+      styleAction: 'remove',
+      elementsAction: window.util.enableElement
+    },
+    'inactive': {
+      styleAction: 'add',
+      elementsAction: window.util.disableElement
+    },
+    'mapClass': 'map--faded',
+    'formClass': 'ad-form--disabled'
+  };
 
   var getAdjustedPinCoords = function (coord) {
     // подразумеваю, что в данных хранятся координаты, на которые указывает острие пина
@@ -73,21 +89,19 @@
   var filtersFormEl = document.querySelector('.map__filters');
   var filtersFormInnerEls = Array.from(filtersFormEl.children);
 
-  var setMapInactive = function () {
-    mapEl.classList.add('map--faded');
-    adFormEl.classList.add('ad-form--disabled');
-    adFormInnerEls.forEach(window.util.disableElement);
-    filtersFormInnerEls.forEach(window.util.disableElement);
-    // первоначальное заполнение поля адреса при еще неактивной странице
-    // в начале же он круглый, поэтому там другие смещения
-    fillAddress(mainPinEl, MainPinPointerInitialOffset);
+  var setMapState = function (action) {
+    mapEl.classList[MapStatesMap[action].styleAction](MapStatesMap.mapClass);
+    adFormEl.classList[MapStatesMap[action].styleAction](MapStatesMap.formClass);
+    adFormInnerEls.forEach(MapStatesMap[action].elementsAction);
+    filtersFormInnerEls.forEach(MapStatesMap[action].elementsAction);
   };
 
-  var setMapActive = function () {
-    mapEl.classList.remove('map--faded');
-    adFormEl.classList.remove('ad-form--disabled');
-    adFormInnerEls.forEach(window.util.enableElement);
-    filtersFormInnerEls.forEach(window.util.enableElement);
+  var setMapActive = function (mapState) {
+    if (mapState) {
+      setMapState(MapStates.ACTIVE);
+    } else {
+      setMapState(MapStates.INACTIVE);
+    }
   };
 
 
@@ -139,7 +153,7 @@
   // а проще загружать после клика по главному пину
 
   mainPinEl.addEventListener('click', function () {
-    setMapActive();
+    setMapActive(true);
     // Полный список похожих объявлений загружается после перехода страницы в активное состояние
     window.backend.download(DOWNLOAD_URL, onLoadingSuccess, onLoadingError);
   });
@@ -169,10 +183,12 @@
   // document.querySelector('.map').insertAdjacentElement('afterbegin', node);
   // ---------------
 
+  // первоначальное заполнение поля адреса при еще неактивной странице
+  // в начале же он круглый, поэтому там другие смещения
+  fillAddress(mainPinEl, MainPinPointerInitialOffset);
 
   window.map = {
     renderMapPins: renderMapPins,
-    setMapActive: setMapActive,
-    setMapInactive: setMapInactive
+    setMapActive: setMapActive
   };
 })();

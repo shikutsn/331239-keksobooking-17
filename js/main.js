@@ -1,5 +1,5 @@
 'use strict';
 
 (function () {
-  window.map.setMapInactive();
+  window.map.setMapActive(false);
 })();
