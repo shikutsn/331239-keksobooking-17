@@ -9,8 +9,13 @@
     console.log('data is set!: ', pins);
   };
 
+  var getData = function () {
+    return pins;
+  };
+
 
   window.data = {
     setData: setData,
+    getData: getData
   };
 })();

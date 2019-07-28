@@ -1,6 +1,7 @@
 'use strict';
 
 (function () {
+  var PINS_MAX_COUNT = 5;
   var PinPointerOffset = {
     X: -25,
     Y: -70
@@ -38,6 +39,7 @@
       MIN: 130,
       MAX: 630
     },
+    // FIX: используются ли константы абсцисс?
     ABSCISS: {
       MIN: 0,
       MAX: 1200
@@ -47,10 +49,10 @@
   var getAdjustedPinCoords = function (coord) {
     // подразумеваю, что в данных хранятся координаты, на которые указывает острие пина
     // соответственно, для вычисления координат самой кнопки нужно вычесть смещение
-    var result = coord;
-    result.x += PinPointerOffset.X;
-    result.y += PinPointerOffset.Y;
-    return result;
+    return {
+      x: coord.x + PinPointerOffset.X,
+      y: coord.y + PinPointerOffset.Y
+    };
   };
 
   var renderPin = function (pin, template) {
@@ -80,13 +82,13 @@
     var pinTemplate = document.querySelector('#pin')
       .content
       .querySelector('.map__pin');
-    var fragment = fillFragment(pins, pinTemplate);
+    var fragment = fillFragment(pins.slice(0, PINS_MAX_COUNT), pinTemplate);
     var pinsEl = document.querySelector('.map__pins');
 
     pinsEl.appendChild(fragment);
   };
 
-  window.data.clearCurrentPins = function () {
+  var clearCurrentPins = function () {
     document.querySelectorAll('.map__pin:not(.map__pin--main)').forEach(function (it) {
       it.remove();
     });
@@ -230,4 +232,10 @@
   });
 
   setMapActive(false);
+
+
+  window.map = {
+    renderMapPins: renderMapPins,
+    clearCurrentPins: clearCurrentPins
+  };
 })();
