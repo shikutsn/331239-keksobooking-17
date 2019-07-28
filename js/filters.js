@@ -67,6 +67,18 @@
 
   var filtersFormEl = document.querySelector('.map__filters');
 
+  var getFilteredPins = function () {
+    var filteredPins = window.data.getData();
+
+    for (var key in FiltersMap) {
+      if (FiltersMap.hasOwnProperty(key)) {
+        filteredPins = filteredPins.filter(FiltersMap[key][filtersFormEl.querySelector('#' + key).value]);
+      }
+    }
+
+    return filteredPins;
+  };
+
   var onFiltersFormChange = function () {
     // console.log('filters form change event has fired!');
     // console.log('evt.target: ', evt.target);
@@ -80,20 +92,14 @@
     // console.log(evt.target.id); // id для селектов
     // console.log(evt.target.value); // значение этих селектов
     // var filteredPins = window.data.getData().filter(FiltersMap[evt.target.id][evt.target.value]);
-    var filteredPins = window.data.getData();
-    // -------------------------
-    for (var key in FiltersMap) {
-      if (FiltersMap.hasOwnProperty(key)) {
-        filteredPins = filteredPins.filter(FiltersMap[key][filtersFormEl.querySelector('#' + key).value]);
-      }
-    }
-    // -------------------------
-    console.log('filteredPins: ', filteredPins);
-    window.map.renderMapPins(filteredPins);
+    window.map.renderMapPins(getFilteredPins());
   };
 
   var onFiltersFormChangeDebounced = window.util.debounce(onFiltersFormChange);
 
   filtersFormEl.addEventListener('change', onFiltersFormChangeDebounced);
 
+  window.filters = {
+    getFilteredPins: getFilteredPins
+  };
 })();
