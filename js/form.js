@@ -1,7 +1,7 @@
 'use strict';
 
 (function () {
-  // перекинуть все объявления переменных в начало
+  // TODO: перекинуть все объявления переменных в начало
   var UPLOAD_URL = 'https://js.dump.academy/keksobooking';
   var FILE_TYPES = ['gif', 'jpg', 'jpeg', 'png'];
   var ApartmentImageData = {

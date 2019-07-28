@@ -86,13 +86,11 @@
     pinsEl.appendChild(fragment);
   };
 
-  // Удаляет пины - еще пригодится
-  // function clearPins() {
-  //   var mapPinEls = document.querySelectorAll('.map__pin:not(.map__pin--main)');
-  //   mapPinEls.forEach(function (it) {
-  //     it.remove();
-  //   });
-  // };
+  window.data.clearCurrentPins = function () {
+    document.querySelectorAll('.map__pin:not(.map__pin--main)').forEach(function (it) {
+      it.remove();
+    });
+  };
 
 
   var mapEl = document.querySelector('.map');
@@ -152,7 +150,7 @@
   };
 
   var onLoadingSuccess = function (pins) {
-    window.data.pins = pins;
+    window.data.setData(pins);
     renderMapPins(pins);
   };
 
@@ -169,9 +167,11 @@
   fillAddress(mainPinEl, MainPinPointerInitialOffset);
 
   mainPinEl.addEventListener('mousedown', function (evt) {
+    // если карта была неактивна, загрузить данные
+    if (mapEl.classList.contains(MapStatesMap.mapClass)) {
+      window.backend.download(onLoadingSuccess, onLoadingError);
+    }
     setMapActive(true);
-
-    var dragged = false;
 
     var startCoord = {
       x: evt.clientX,
@@ -180,8 +180,6 @@
 
     var onMouseMove = function (moveEvt) {
       moveEvt.preventDefault();
-
-      dragged = true;
 
       var shiftCoord = {
         x: moveEvt.clientX - startCoord.x,
@@ -221,10 +219,7 @@
     var onMouseUp = function (upEvt) {
       upEvt.preventDefault();
 
-      if (!dragged) {
-        fillAddress(mainPinEl, MainPinPointerOffset);
-      }
-      window.backend.download(onLoadingSuccess, onLoadingError);
+      fillAddress(mainPinEl, MainPinPointerOffset);
 
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
