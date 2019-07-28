@@ -13,7 +13,10 @@
     X: -31,
     Y: -31
   };
-  var DOWNLOAD_URL = 'https://js.dump.academy/keksobooking/data';
+  var MainPinSize = {
+    WIDTH: 65,
+    HEIGHT: 84
+  };
   var MapStates = {
     ACTIVE: 'active',
     INACTIVE: 'inactive'
@@ -29,6 +32,16 @@
     },
     'mapClass': 'map--faded',
     'formClass': 'ad-form--disabled'
+  };
+  var PinData = {
+    ORDINATE: {
+      MIN: 130,
+      MAX: 630
+    },
+    ABSCISS: {
+      MIN: 0,
+      MAX: 1200
+    }
   };
 
   var getAdjustedPinCoords = function (coord) {
@@ -104,59 +117,44 @@
     }
   };
 
-
   var mainPinEl = mapEl.querySelector('.map__pin--main');
 
   var onLoadingError = function (errorMessage) {
-    // посмотреть, возможно, тут другая верстка сообщения о сетевой ошибке
-    // TODO: Если при отправке данных произошла ошибка запроса, покажите соответствующее сообщение в блоке main, используя блок #error из шаблона template
-    var node = document.createElement('div');
-    node.style = 'z-index: 100; margin: 0 auto; text-align: center; background-color: red;';
-    node.style.position = 'absolute';
-    node.style.padding = '20px';
-    node.style.width = '100%';
-    node.style.left = 0;
-    node.style.fontSize = '30px';
+    var mainEl = document.querySelector('main');
+    var errorTemplateEl = document.querySelector('#error')
+    .content
+    .querySelector('.error');
+    var errorEl = errorTemplateEl.cloneNode(true);
+    var errorTextEl = errorEl.querySelector('.error__message');
+    errorTextEl.textContent = errorMessage;
+    mainEl.appendChild(errorEl);
+    var errorPopupCloseBtnEl = errorEl.querySelector('.error__button');
 
-    node.textContent = errorMessage;
-    document.body.insertAdjacentElement('afterbegin', node);
+    var removeErrorPopup = function () {
+      mainEl.removeChild(errorEl);
+      errorPopupCloseBtnEl.removeEventListener('click', onErrorPopupClose);
+      document.removeEventListener('click', onErrorPopupClose);
+      document.removeEventListener('keydown', onErrorEscPress);
+    };
+
+    var onErrorPopupClose = function () {
+      removeErrorPopup();
+    };
+
+    var onErrorEscPress = function (evt) {
+      if (window.util.isEscPressed(evt)) {
+        removeErrorPopup();
+      }
+    };
+
+    document.addEventListener('click', onErrorPopupClose);
+    document.addEventListener('keydown', onErrorEscPress);
   };
 
   var onLoadingSuccess = function (pins) {
     window.data.pins = pins;
-
-    // отладка в левом верхнем углу
-    console.log(window.data.pins);
-    window.data.pins[0].location.x = 1;
-    window.data.pins[0].location.y = 130;
-    console.log(window.data.pins);
-    // ---------------
-
-
-    // window.data.discussedPhotos = [];
-    window.map.renderMapPins(pins);
-    // window.filters.showFiltersForm();
-
-    // временно для 4-го задания
-    // document.querySelector('.map').classList.remove('map--faded');
-    // document.querySelector('.map--faded .map__filters').opacity = 1;
-    // ------------------
-
-    // после загрузки делаем карту активной
-    // но пока что не делаем
-    // window.map.setMapActive();
+    renderMapPins(pins);
   };
-
-  // window.data.getMockData(onLoadingSuccess);
-
-  // данные загружать, но не рисовать до клика по главному пину что ли?
-  // а проще загружать после клика по главному пину
-
-  mainPinEl.addEventListener('click', function () {
-    setMapActive(true);
-    // Полный список похожих объявлений загружается после перехода страницы в активное состояние
-    window.backend.download(DOWNLOAD_URL, onLoadingSuccess, onLoadingError);
-  });
 
   var fillAddress = function (pin, offset) {
     // заполняет поле адреса, вычитая смещение из ДОМ-координат
@@ -166,29 +164,75 @@
     addressEl.value = (pin.offsetLeft - offset.X) + ', ' + (pin.offsetTop - offset.Y);
   };
 
-  // document.querySelector('.promo img').style.position = 'absolute';
-  // document.querySelector('.promo img').style.left = mainPinEl.offsetLeft + 'px';
-  // console.log(mainPinEl.offsetLeft);
-  // document.querySelector('.promo img').style.top = mainPinEl.offsetTop + 'px';
-
-  // ---------------
-  // var node = document.createElement('div');
-  // node.style = 'z-index: 100; margin: 0 auto; text-align: center; background-color: green; opacity: 0.5';
-  // node.style.position = 'absolute';
-  // node.style.width = '62px';
-  // node.style.height = '62px';
-  // node.style.left = mainPinEl.offsetLeft + 'px';
-  // node.style.top = mainPinEl.offsetTop + 'px';
-  // node.textContent = 'qqq';
-  // document.querySelector('.map').insertAdjacentElement('afterbegin', node);
-  // ---------------
-
   // первоначальное заполнение поля адреса при еще неактивной странице
   // в начале же он круглый, поэтому там другие смещения
   fillAddress(mainPinEl, MainPinPointerInitialOffset);
 
-  window.map = {
-    renderMapPins: renderMapPins,
-    setMapActive: setMapActive
-  };
+  mainPinEl.addEventListener('mousedown', function (evt) {
+    setMapActive(true);
+
+    var dragged = false;
+
+    var startCoord = {
+      x: evt.clientX,
+      y: evt.clientY
+    };
+
+    var onMouseMove = function (moveEvt) {
+      moveEvt.preventDefault();
+
+      dragged = true;
+
+      var shiftCoord = {
+        x: moveEvt.clientX - startCoord.x,
+        y: moveEvt.clientY - startCoord.y
+      };
+
+      var newCoord = {
+        x: mainPinEl.offsetLeft + shiftCoord.x,
+        y: mainPinEl.offsetTop + shiftCoord.y
+      };
+
+      // TODO упростить расчеты координат
+
+      if (newCoord.x < PinData.ABSCISS.MIN) {
+        newCoord.x = PinData.ABSCISS.MIN;
+      }
+      if (newCoord.x > PinData.ABSCISS.MAX - MainPinSize.WIDTH) {
+        newCoord.x = PinData.ABSCISS.MAX - MainPinSize.WIDTH;
+      }
+      if (newCoord.y < PinData.ORDINATE.MIN) {
+        newCoord.y = PinData.ORDINATE.MIN;
+      }
+      if (newCoord.y > PinData.ORDINATE.MAX) {
+        newCoord.y = PinData.ORDINATE.MAX;
+      }
+      mainPinEl.style.left = newCoord.x + 'px';
+      mainPinEl.style.top = newCoord.y + 'px';
+
+      fillAddress(mainPinEl, MainPinPointerOffset);
+
+      startCoord = {
+        x: moveEvt.clientX,
+        y: moveEvt.clientY
+      };
+    };
+
+    var onMouseUp = function (upEvt) {
+      upEvt.preventDefault();
+
+      if (!dragged) {
+        fillAddress(mainPinEl, MainPinPointerOffset);
+      }
+      window.backend.download(onLoadingSuccess, onLoadingError);
+
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  });
+
+  setMapActive(false);
 })();

@@ -1,6 +1,7 @@
 'use strict';
 
 (function () {
+  // FIX почистить мокдату
   var PinData = {
     COUNT: 8,
     ORDINATE: {
@@ -48,6 +49,7 @@
 
 
   window.data = {
+    // TODO разобраться с этим глобальным массивом (как в кекстаграме)
     pins: [],
     getMockData: function (onDataLoaded) {
       onDataLoaded(getPins(PinData.COUNT));

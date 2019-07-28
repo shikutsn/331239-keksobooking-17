@@ -3,8 +3,15 @@
 (function () {
   var RESPONSE_CODE_OK = 200;
   var TIMEOUT = 10000;
-  var REQUEST_GET = 'GET';
-  var REQUEST_POST = 'POST';
+  var Url = {
+    DOWNLOAD: 'https://js.dump.academy/keksobooking/data',
+    UPLOAD: 'https://js.dump.academy/keksobooking'
+  };
+
+  var Request = {
+    GET: 'GET',
+    POST: 'POST'
+  };
 
   var createXHRequest = function (method, url, onSuccess, onError, data) {
     var xhr = new XMLHttpRequest();
@@ -38,11 +45,11 @@
 
 
   window.backend = {
-    download: function (url, onSuccess, onError) {
-      createXHRequest(REQUEST_GET, url, onSuccess, onError);
+    download: function (onSuccess, onError) {
+      createXHRequest(Request.GET, Url.DOWNLOAD, onSuccess, onError);
     },
-    upload: function (url, data, onSuccess, onError) {
-      createXHRequest(REQUEST_POST, url, onSuccess, onError, data);
+    upload: function (data, onSuccess, onError) {
+      createXHRequest(Request.POST, Url.UPLOAD, onSuccess, onError, data);
     }
   };
 })();
