@@ -7,11 +7,32 @@
     'house': 'Дом',
     'palace': 'Дворец'
   };
+
+  var FillCardMap = {
+    'popup__title': {
+      ACTION: fillCardField,
+      DATA: 'title'
+    },
+    'popup__text--address': {
+      ACTION: fillCardField,
+      DATA: 'address'
+    }
+  };
+
   var cardTemplateEl = document.querySelector('#card')
   .content
   .querySelector('.map__card');
   var mapPinsEl = document.querySelector('.map__pins');
   var currentPinIndex; // fix а используется ли эта переменная? пока что нет
+
+  var fillCardField = function (cardFieldEl, content) {
+    if (content) {
+      cardFieldEl.textContent = content;
+    } else {
+      cardFieldEl.style.display = 'none';
+    }
+    return cardFieldEl.textContent;
+  };
 
   var onPinClick = function (evt) {
     var clickedPin = evt.target.closest('.map__pin:not(.map__pin--main)');
@@ -30,15 +51,6 @@
 
   mapPinsEl.addEventListener('click', onPinClick);
 
-  var fillCardField = function (cardFieldEl, content) {
-    if (content) {
-      cardFieldEl.textContent = content;
-    } else {
-      cardFieldEl.style.display = 'none';
-    }
-    return cardFieldEl.textContent;
-  };
-
   var fillPriceField = function (cardPriceFieldEl, price) {
     cardPriceFieldEl.textContent = fillCardField(cardPriceFieldEl, price) + '₽/ночь';
   };
@@ -51,10 +63,10 @@
   var renderCard = function (pin) {
     var cardEl = cardTemplateEl.cloneNode(true);
 
-    var cardTitleEl = cardEl.querySelector('.popup__title');
-    var cardAddressEl = cardEl.querySelector('.popup__text--address');
-    var cardPriceEl = cardEl.querySelector('.popup__text--price');
-    var cardTypeEl = cardEl.querySelector('.popup__type');
+    // var cardTitleEl = cardEl.querySelector('.popup__title');
+    // var cardAddressEl = cardEl.querySelector('.popup__text--address');
+    // var cardPriceEl = cardEl.querySelector('.popup__text--price');
+    // var cardTypeEl = cardEl.querySelector('.popup__type');
     // // поле с количеством гостей и комнат
     // var cardCapacity = card.querySelector('.popup__text--capacity');
     // // поле с описанием
@@ -72,11 +84,23 @@
     // var cardButton = card.querySelector('.popup__close');
 
     // -------------------------------
-    fillCardField(cardTitleEl, pin.offer.title);
-    fillCardField(cardAddressEl, pin.offer.address);
-    fillPriceField(cardPriceEl, pin.offer.price);
-    fillTypeEl(cardTypeEl, pin.offer.type);
-
+    // fillCardField(cardTitleEl, pin.offer.title);
+    // fillCardField(cardAddressEl, pin.offer.address);
+    // fillPriceField(cardPriceEl, pin.offer.price);
+    // fillTypeEl(cardTypeEl, pin.offer.type);
+    // -------------------------------
+    for (var key in FillCardMap) {
+      if (FillCardMap.hasOwnProperty(key)) {
+        // filteredPins = filteredPins.filter(FiltersMap[key][filtersFormEl.querySelector('#' + key).value]);
+        var currentField = cardEl.querySelector('.' + key);
+        var currentAction = FillCardMap[key].ACTION;
+        var currentDataKey = FillCardMap[key].DATA;
+        currentAction(currentField, pin.offer[currentDataKey]);
+        console.log('currentDataKey: ', currentDataKey);
+        console.log('pin.offer[currentDataKey]: ', pin.offer[currentDataKey]);
+        debugger;
+      }
+    }
 
     mapPinsEl.insertBefore(cardEl, mapPinsEl.querySelector('.map__filters-container'));
   };
