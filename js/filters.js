@@ -68,7 +68,7 @@
   var filtersFormEl = document.querySelector('.map__filters');
 
   var getFilteredPins = function () {
-    var filteredPins = window.data.getData();
+    var filteredPins = window.data.get();
 
     for (var key in FiltersMap) {
       if (FiltersMap.hasOwnProperty(key)) {
@@ -91,8 +91,8 @@
     window.map.clearCurrentPins();
     // console.log(evt.target.id); // id для селектов
     // console.log(evt.target.value); // значение этих селектов
-    // var filteredPins = window.data.getData().filter(FiltersMap[evt.target.id][evt.target.value]);
-    window.map.renderMapPins(getFilteredPins());
+    // var filteredPins = window.data.get().filter(FiltersMap[evt.target.id][evt.target.value]);
+    window.map.renderPins(getFilteredPins());
   };
 
   var onFiltersFormChangeDebounced = window.util.debounce(onFiltersFormChange);
@@ -100,6 +100,6 @@
   filtersFormEl.addEventListener('change', onFiltersFormChangeDebounced);
 
   window.filters = {
-    getFilteredPins: getFilteredPins
+    getPins: getFilteredPins
   };
 })();

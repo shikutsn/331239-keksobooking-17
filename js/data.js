@@ -3,19 +3,18 @@
 (function () {
   var pins = [];
 
-
   var setData = function (data) {
     pins = data;
-    console.log('data is set!: ', pins);
+    // delete pins[1].offer;
+    // console.log('data is set!: ', pins);
   };
 
   var getData = function () {
     return pins;
   };
 
-
   window.data = {
-    setData: setData,
-    getData: getData
+    set: setData,
+    get: getData
   };
 })();

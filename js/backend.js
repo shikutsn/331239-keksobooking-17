@@ -8,7 +8,7 @@
     UPLOAD: 'https://js.dump.academy/keksobooking'
   };
 
-  var Request = {
+  var RequestMethod = {
     GET: 'GET',
     POST: 'POST'
   };
@@ -19,10 +19,9 @@
 
     xhr.addEventListener('load', function () {
       if (xhr.status === RESPONSE_CODE_OK) {
-        onSuccess(xhr.response);
-      } else {
-        onError('Статус ответа: ' + xhr.status + ' ' + xhr.statusText);
+        return onSuccess(xhr.response);
       }
+      return onError('Статус ответа: ' + xhr.status + ' ' + xhr.statusText);
     });
 
     xhr.addEventListener('error', function () {
@@ -37,19 +36,17 @@
 
     xhr.open(method, url);
     if (data) {
-      xhr.send(data);
-    } else {
-      xhr.send();
+      return xhr.send(data);
     }
+    return xhr.send();
   };
-
 
   window.backend = {
     download: function (onSuccess, onError) {
-      createXHRequest(Request.GET, Url.DOWNLOAD, onSuccess, onError);
+      createXHRequest(RequestMethod.GET, Url.DOWNLOAD, onSuccess, onError);
     },
     upload: function (data, onSuccess, onError) {
-      createXHRequest(Request.POST, Url.UPLOAD, onSuccess, onError, data);
+      createXHRequest(RequestMethod.POST, Url.UPLOAD, onSuccess, onError, data);
     }
   };
 })();

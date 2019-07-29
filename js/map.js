@@ -1,6 +1,7 @@
 'use strict';
 
 (function () {
+  // TODO: пройтись по замечаниям Вадима из readme.md от 29.07. Поискать подобные случаи и их фикс
   var PINS_MAX_COUNT = 5;
   var PinPointerOffset = {
     X: -25,
@@ -39,7 +40,7 @@
       MIN: 130,
       MAX: 630
     },
-    // FIX: используются ли константы абсцисс?
+    // FIXME: используются ли константы абсцисс?
     ABSCISS: {
       MIN: 0,
       MAX: 1200
@@ -79,10 +80,11 @@
   };
 
   var renderMapPins = function (pins) {
-    var pinTemplate = document.querySelector('#pin')
-      .content
-      .querySelector('.map__pin');
-    var fragment = fillFragment(pins.slice(0, PINS_MAX_COUNT), pinTemplate);
+    var pinsWithOffer = pins.filter(function (pin) {
+      return 'offer' in pin;
+    });
+    var pinTemplate = document.querySelector('#pin').content.querySelector('.map__pin');
+    var fragment = fillFragment(pinsWithOffer.slice(0, PINS_MAX_COUNT), pinTemplate);
     var pinsEl = document.querySelector('.map__pins');
 
     pinsEl.appendChild(fragment);
@@ -121,9 +123,7 @@
 
   var onLoadingError = function (errorMessage) {
     var mainEl = document.querySelector('main');
-    var errorTemplateEl = document.querySelector('#error')
-    .content
-    .querySelector('.error');
+    var errorTemplateEl = document.querySelector('#error').content.querySelector('.error');
     var errorEl = errorTemplateEl.cloneNode(true);
     var errorTextEl = errorEl.querySelector('.error__message');
     errorTextEl.textContent = errorMessage;
@@ -152,7 +152,7 @@
   };
 
   var onLoadingSuccess = function (pins) {
-    window.data.setData(pins);
+    window.data.set(pins);
     renderMapPins(pins);
   };
 
@@ -233,9 +233,8 @@
 
   setMapActive(false);
 
-
   window.map = {
-    renderMapPins: renderMapPins,
+    renderPins: renderMapPins,
     clearCurrentPins: clearCurrentPins
   };
 })();
