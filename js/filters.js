@@ -6,17 +6,17 @@
       'any': function () {
         return true;
       },
-      'palace': function (it) {
-        return it.offer.type === 'palace';
+      'palace': function (pins) {
+        return pins.offer.type === 'palace';
       },
-      'flat': function (it) {
-        return it.offer.type === 'flat';
+      'flat': function (pins) {
+        return pins.offer.type === 'flat';
       },
-      'house': function (it) {
-        return it.offer.type === 'house';
+      'house': function (pins) {
+        return pins.offer.type === 'house';
       },
-      'bungalo': function (it) {
-        return it.offer.type === 'bungalo';
+      'bungalo': function (pins) {
+        return pins.offer.type === 'bungalo';
       }
     },
     'housing-price': {
@@ -24,42 +24,42 @@
       'any': function () {
         return true;
       },
-      'middle': function (it) {
-        return it.offer.price >= 10000 && it.offer.price <= 50000;
+      'middle': function (pins) {
+        return pins.offer.price >= 10000 && pins.offer.price <= 50000;
       },
-      'low': function (it) {
-        return it.offer.price < 10000;
+      'low': function (pins) {
+        return pins.offer.price < 10000;
       },
-      'high': function (it) {
-        return it.offer.price > 50000;
+      'high': function (pins) {
+        return pins.offer.price > 50000;
       }
     },
     'housing-rooms': {
       'any': function () {
         return true;
       },
-      '1': function (it) {
-        return it.offer.rooms === 1;
+      '1': function (pins) {
+        return pins.offer.rooms === 1;
       },
-      '2': function (it) {
-        return it.offer.rooms === 2;
+      '2': function (pins) {
+        return pins.offer.rooms === 2;
       },
-      '3': function (it) {
-        return it.offer.rooms === 3;
+      '3': function (pins) {
+        return pins.offer.rooms === 3;
       }
     },
     'housing-guests': {
       'any': function () {
         return true;
       },
-      '1': function (it) {
-        return it.offer.guests === 1;
+      '1': function (pins) {
+        return pins.offer.guests === 1;
       },
-      '2': function (it) {
-        return it.offer.guests === 2;
+      '2': function (pins) {
+        return pins.offer.guests === 2;
       },
-      '0': function (it) {
-        return it.offer.guests === 0;
+      '0': function (pins) {
+        return pins.offer.guests === 0;
       }
     }
     // TODO прикрутить сюда еще фильтр по чекбоксам и проверить, после отрисовки карточек, что все работает верно
@@ -68,10 +68,12 @@
   var filtersFormEl = document.querySelector('.map__filters');
 
   var getFilteredPins = function () {
+    // TODO: это - плохая функция. Она и наружу торчит и перефильтровывает все по вызову, а не хранит где-нибудь в глобальной для модуля переменной
     var filteredPins = window.data.get();
 
     for (var key in FiltersMap) {
       if (FiltersMap.hasOwnProperty(key)) {
+        // FIXME лучше эту строчку упростить
         filteredPins = filteredPins.filter(FiltersMap[key][filtersFormEl.querySelector('#' + key).value]);
       }
     }
@@ -93,6 +95,10 @@
     // console.log(evt.target.value); // значение этих селектов
     // var filteredPins = window.data.get().filter(FiltersMap[evt.target.id][evt.target.value]);
     window.map.renderPins(getFilteredPins());
+    // ---------------
+    var tmp = document.querySelector('.map__checkbox');
+    // TODO заводим мапу и value у чекнутого фильтра проверяем.
+    console.log('map__checkbox: ', tmp.value);
   };
 
   var onFiltersFormChangeDebounced = window.util.debounce(onFiltersFormChange);

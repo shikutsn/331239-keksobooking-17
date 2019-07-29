@@ -13,6 +13,11 @@
     'palace': 'Дворец'
   };
 
+  var MapPinsCls = {
+    ACTIVE: 'map__pin--active',
+    ALL_BUT_MAIN: 'map__pin:not(.map__pin--main)'
+  };
+
   var fillCardField = function (cardFieldEl, content) {
     if (content) {
       cardFieldEl.textContent = content;
@@ -24,91 +29,163 @@
 
   var FillCardMap = {
     'popup__title': {
-      ACTION: fillCardField,
-      DATA: 'title'
+      ACTION: function (cardTitleFieldEl, pin, key) {
+        fillCardField(cardTitleFieldEl, pin.offer[key]);
+      },
+      DATA: ['title']
     },
     'popup__text--address': {
-      ACTION: fillCardField,
-      DATA: 'address'
+      ACTION: function (cardAddressFieldEl, pin, key) {
+        fillCardField(cardAddressFieldEl, pin.offer[key]);
+      },
+      DATA: ['address']
     },
     'popup__text--price': {
-      ACTION: function (cardPriceFieldEl, price) {
-        cardPriceFieldEl.textContent = fillCardField(cardPriceFieldEl, price) + '₽/ночь';
+      ACTION: function (cardPriceFieldEl, pin, key) {
+        cardPriceFieldEl.textContent = fillCardField(cardPriceFieldEl, pin.offer[key]) + '₽/ночь';
       },
-      DATA: 'price'
+      DATA: ['price']
     },
     'popup__type': {
-      ACTION: function (typeFieldEl, type) {
-        typeFieldEl.textContent = AdTypeMap[fillCardField(typeFieldEl, type)];
+      ACTION: function (typeFieldEl, pin, key) {
+        typeFieldEl.textContent = AdTypeMap[fillCardField(typeFieldEl, pin.offer[key])];
       },
-      DATA: 'type'
+      DATA: ['type']
     },
     'popup__text--capacity': {
-      ACTION: function (capacityFieldEl, rooms, guests) {
+      ACTION: function (capacityFieldEl, pin, keys) {
+        var rooms = pin.offer[keys[0]];
+        var guests = pin.offer[keys[1]];
         capacityFieldEl.textContent = fillCardField(capacityFieldEl, rooms) + ' ' +
         window.util.getPluralNoun(rooms, PLURAL_ENDINGS.ROOMS) + ' для ' +
         fillCardField(capacityFieldEl, guests) + ' ' + window.util.getPluralNoun(guests, PLURAL_ENDINGS.GUESTS);
       },
-      DATA: 'rooms',
-      EXTRA_DATA: 'guests'
+      DATA: ['rooms', 'guests']
     },
     'popup__text--time': {
-      ACTION: function (timeFieldEl, checkin, checkout) {
+      ACTION: function (timeFieldEl, pin, keys) {
+        var checkin = pin.offer[keys[0]];
+        var checkout = pin.offer[keys[1]];
         timeFieldEl.textContent = 'Заезд после ' + fillCardField(timeFieldEl, checkin) + ', выезд до ' + fillCardField(timeFieldEl, checkout);
       },
-      DATA: 'checkin',
-      EXTRA_DATA: 'checkout'
+      DATA: ['checkin', 'checkout']
+    },
+    'popup__features': {
+      ACTION: function (featuresFieldEl, pin, key) {
+        var featuresList = Array.from(featuresFieldEl.children);
+        var offeredFeatures = pin.offer[key];
+
+        featuresList.forEach(function (feature) {
+          var isCurrentFeatureAvailable = offeredFeatures.some(function (currentOfferedFeature) {
+            return feature.classList.contains('popup__feature--' + currentOfferedFeature);
+          });
+          if (!isCurrentFeatureAvailable) {
+            feature.remove();
+          }
+        });
+      },
+      DATA: ['features']
+    },
+    'popup__description': {
+      ACTION: function (cardDescriptionFieldEl, pin, key) {
+        fillCardField(cardDescriptionFieldEl, pin.offer[key]);
+      },
+      DATA: ['description']
+    },
+    'popup__photos': {
+      ACTION: function (photosEl, pin, key) {
+        var photos = pin.offer[key];
+        if (!photos.length) {
+          photosEl.style.display = 'none';
+          return photos;
+        }
+        var fragment = document.createDocumentFragment();
+        var imgTemplateEl = photosEl.querySelector('img');
+        // удаляем первую картинку, которая всегда есть в шаблоне
+        photosEl.querySelector('img').remove();
+
+        photos.forEach(function (currentPhoto) {
+          var newImg = imgTemplateEl.cloneNode(true);
+          newImg.src = currentPhoto;
+          fragment.appendChild(newImg);
+        });
+
+        return photosEl.appendChild(fragment);
+      },
+      DATA: ['photos']
+    },
+    'popup__avatar': {
+      ACTION: function (avatarFieldEl, pin, key) {
+        avatarFieldEl.src = pin.author[key];
+      },
+      DATA: ['avatar']
     }
   };
 
   var cardTemplateEl = document.querySelector('#card').content.querySelector('.map__card');
   var mapPinsEl = document.querySelector('.map__pins');
-  var currentPinIndex; // FIXME а используется ли эта переменная? пока что нет
+
+  var removeCard = function () {
+    var mapCardEl = mapPinsEl.querySelector('.map__card');
+    if (mapCardEl) {
+      mapCardEl.remove();
+    }
+  };
+
+  var onCardCloseBtnClick = function () {
+    removeCard();
+  };
+
+  var onCardEscPress = function (evt) {
+    if (window.util.isEscPressed(evt)) {
+      removeCard();
+    }
+  };
 
   var renderCard = function (pin) {
+    removeCard();
     var cardEl = cardTemplateEl.cloneNode(true);
-    // // поле с описанием
-    // var cardDescription = card.querySelector('.popup__description');
-    // // поле с указанием времени заезда и выезда
-    // var cardTime = card.querySelector('.popup__text--time');
-    // // поле со списком доступных удобств
-    // var cardFeatures = card.querySelector('ul.popup__features');
-    // // блок с фото
-    // var photosList = card.querySelector('.popup__photos');
-    // var photo = photosList.querySelector('.popup__photo');
-    // // блок с аватаркой
-    // var cardAvatar = card.querySelector('.popup__avatar');
-    // // кнопка закрытия
-    // var cardButton = card.querySelector('.popup__close');
 
     for (var key in FillCardMap) {
       if (FillCardMap.hasOwnProperty(key)) {
         var currentField = cardEl.querySelector('.' + key);
         var currentAction = FillCardMap[key].ACTION;
-        var currentDataKey = FillCardMap[key].DATA;
-        var currentExtraDataKey = FillCardMap[key].EXTRA_DATA;
-        // если поля EXTRA_DATA нет, то третьим параметром передается undefined, который и не используется
-        // TODO: а может, вообще сделать DATA массивом, но как тогда передавать все? Или обрабатывать в функциях же!
-        currentAction(currentField, pin.offer[currentDataKey], pin.offer[currentExtraDataKey]);
+        var currentDataKeys = FillCardMap[key].DATA;
+
+        currentAction(currentField, pin, currentDataKeys);
       }
     }
 
     mapPinsEl.insertBefore(cardEl, mapPinsEl.querySelector('.map__filters-container'));
+
+    var cardCloseBtnEl = cardEl.querySelector('.popup__close');
+    cardCloseBtnEl.addEventListener('click', onCardCloseBtnClick);
+    document.addEventListener('keydown', onCardEscPress);
+  };
+
+  var activatePin = function (pin) {
+    pin.classList.add(MapPinsCls.ACTIVE);
+  };
+
+  var deactivatePin = function () {
+    var currentActivePin = mapPinsEl.querySelector('.' + MapPinsCls.ACTIVE);
+    if (currentActivePin) {
+      currentActivePin.classList.remove(MapPinsCls.ACTIVE);
+    }
   };
 
   var onPinClick = function (evt) {
-    var clickedPin = evt.target.closest('.map__pin:not(.map__pin--main)');
+    var clickedPin = evt.target.closest('.' + MapPinsCls.ALL_BUT_MAIN);
     if (clickedPin) {
-      // TODO: как было в кекстаграмме - плохо, что фильтрованные пины торчат из модуля фильтров. Или прокатит?
-      var currentRenderedPins = Array.from(document.querySelectorAll('.map__pin:not(.map__pin--main)'));
-      currentPinIndex = currentRenderedPins.indexOf(clickedPin);
+      deactivatePin();
+      activatePin(clickedPin);
+      var currentRenderedPins = Array.from(document.querySelectorAll('.' + MapPinsCls.ALL_BUT_MAIN));
+      var currentPinIndex = currentRenderedPins.indexOf(clickedPin);
+      // TODO: Все-таки данные фильтрованных пинов торчат из модуля фильтров, а не модуля данных.
       var clickedAd = window.filters.getPins()[currentPinIndex];
-      // console.log('filteredPins: ', window.filters.getPins());
-      // console.log('card: ', clickedAd);
-      // console.log('clickedPin: ', clickedPin);
-      // console.log('currentPinIndex: ', currentPinIndex);
       renderCard(clickedAd);
     }
+
   };
 
   mapPinsEl.addEventListener('click', onPinClick);
