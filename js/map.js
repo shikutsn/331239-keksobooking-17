@@ -96,7 +96,6 @@
     });
   };
 
-
   var mapEl = document.querySelector('.map');
   var adFormEl = document.querySelector('.ad-form');
   var addressEl = adFormEl.querySelector('#address');
@@ -108,15 +107,24 @@
     mapEl.classList[MapStatesMap[action].styleAction](MapStatesMap.mapClass);
     adFormEl.classList[MapStatesMap[action].styleAction](MapStatesMap.formClass);
     adFormInnerEls.forEach(MapStatesMap[action].elementsAction);
+  };
+
+  var setFiltersFormState = function (action) {
     filtersFormInnerEls.forEach(MapStatesMap[action].elementsAction);
   };
 
   var setMapActive = function (mapState) {
-    if (mapState) {
-      setMapState(MapStates.ACTIVE);
-    } else {
-      setMapState(MapStates.INACTIVE);
-    }
+    return mapState ? setMapState(MapStates.ACTIVE) : setMapState(MapStates.INACTIVE);
+    // if (mapState) {
+    //   setMapState(MapStates.ACTIVE);
+    // } else {
+    //   setMapState(MapStates.INACTIVE);
+    // }
+  };
+
+  var setFiltersFormActive = function (filtersFormState) {
+    // TODO казалось бы, причем тут MapStates? Но выключание формы фильтров начинало свою жизнь вместе с картой, а потом переехало в onLoadingSuccess
+    return filtersFormState ? setFiltersFormState(MapStates.ACTIVE) : setFiltersFormState(MapStates.INACTIVE);
   };
 
   var mainPinEl = mapEl.querySelector('.map__pin--main');
@@ -152,6 +160,7 @@
   };
 
   var onLoadingSuccess = function (pins) {
+    setFiltersFormActive(true);
     window.data.set(pins);
     renderMapPins(pins);
   };
@@ -169,10 +178,6 @@
   fillAddress(mainPinEl, MainPinPointerInitialOffset);
 
   mainPinEl.addEventListener('mousedown', function (evt) {
-    // если карта была неактивна, загрузить данные
-    if (mapEl.classList.contains(MapStatesMap.mapClass)) {
-      window.backend.download(onLoadingSuccess, onLoadingError);
-    }
     setMapActive(true);
 
     var startCoord = {
@@ -194,7 +199,6 @@
       };
 
       // TODO упростить расчеты координат
-
       if (newCoord.x < PinData.ABSCISS.MIN) {
         newCoord.x = PinData.ABSCISS.MIN;
       }
@@ -221,6 +225,7 @@
     var onMouseUp = function (upEvt) {
       upEvt.preventDefault();
 
+      window.backend.download(onLoadingSuccess, onLoadingError);
       fillAddress(mainPinEl, MainPinPointerOffset);
 
       document.removeEventListener('mousemove', onMouseMove);
@@ -232,6 +237,7 @@
   });
 
   setMapActive(false);
+  setFiltersFormActive(false);
 
   window.map = {
     renderPins: renderMapPins,

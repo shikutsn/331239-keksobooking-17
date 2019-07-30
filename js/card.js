@@ -189,4 +189,8 @@
   };
 
   mapPinsEl.addEventListener('click', onPinClick);
+
+  window.card = {
+    remove: removeCard
+  };
 })();
