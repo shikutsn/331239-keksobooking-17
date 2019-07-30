@@ -104,6 +104,10 @@
     mapEl.classList[BlockStatesMap[action].styleAction](DISABLED_MAP_CLS);
     adFormEl.classList[BlockStatesMap[action].styleAction](DISABLED_AD_FORM_CS);
     adFormInnerEls.forEach(BlockStatesMap[action].elementsAction);
+    // TODO похоже, придется избавиться от этой мапы и такого выпендрежа с активацией карты. Сделать все вручную несколькими отдельными функциями на вкл/выкл
+    if (action === BlockStates.ACTIVE) {
+      window.adForm.init();
+    }
   };
 
   var setFiltersFormState = function (action) {
@@ -156,6 +160,8 @@
     renderMapPins(pins);
   };
 
+  // FIXME: возможно, место этой функции в модуле с формой?
+  // не передавать смещение, а передавать флаг - метка при неактивной карте или при активной и в зависимости от этого применят разные смещения
   var fillAddress = function (pin, offset) {
     // заполняет поле адреса, вычитая смещение из ДОМ-координат
     // 1) если брать координаты адреса из координат ДОМ-элемента, то смещение надо вычитать
@@ -193,6 +199,7 @@
       };
 
       // TODO упростить расчеты координат
+      // TODO объект boundaries?
       if (newCoord.x < PinData.ABSCISS.MIN) {
         newCoord.x = PinData.ABSCISS.MIN;
       }
@@ -234,6 +241,8 @@
 
   window.map = {
     renderPins: renderMapPins,
-    clearCurrentPins: clearCurrentPins
+    clearCurrentPins: clearCurrentPins,
+    setActive: setMapActive,
+    fillAddress: fillAddress
   };
 })();

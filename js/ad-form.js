@@ -2,8 +2,9 @@
 
 (function () {
   // TODO: перекинуть все объявления переменных в начало
-  var UPLOAD_URL = 'https://js.dump.academy/keksobooking';
   var FILE_TYPES = ['gif', 'jpg', 'jpeg', 'png'];
+  var MAIN_PIN_DEFAULT_STYLE = 'left: 570px; top: 375px;';
+  var AVATAR_DEFAULT_SRC = 'img/muffin-grey.svg';
   var ApartmentImageData = {
     ALT_TEXT: 'Фотография жилья',
     WIDTH: '70',
@@ -49,11 +50,11 @@
     },
     '3': {
       CORRECT_VALUES: ['3', '2', '1'],
-      INVALID_TEXT: 'Для выбранного числа комнат допустимы значения "Количество мест: для 3, 2, 1 гостей".'
+      INVALID_TEXT: 'Для выбранного числа комнат допустимы значения "Количество мест: для 1, 2, 3 гостей".'
     },
     '2': {
       CORRECT_VALUES: ['2', '1'],
-      INVALID_TEXT: 'Для выбранного числа комнат допустимы значения "Количество мест: для 2, 1 гостей".'
+      INVALID_TEXT: 'Для выбранного числа комнат допустимы значения "Количество мест: для 1, 2 гостей".'
     },
     '1': {
       CORRECT_VALUES: ['1'],
@@ -69,6 +70,15 @@
   var timeoutEl = adFormEl.querySelector('#timeout');
   var roomCountEl = adFormEl.querySelector('#room_number');
   var capacityEl = adFormEl.querySelector('#capacity');
+  var filtersFormEl = document.querySelector('.map__filters');
+  var resetBtnEl = adFormEl.querySelector('.ad-form__reset');
+
+  var mainEl = document.querySelector('main');
+  var avatarFileEl = adFormEl.querySelector('#avatar');
+  var avatarImageEl = adFormEl.querySelector('.ad-form-header__preview img');
+  var photoContainerEl = adFormEl.querySelector('.ad-form__photo-container');
+  var photoFileEl = photoContainerEl.querySelector('#images');
+  var photoEl = photoContainerEl.querySelector('.ad-form__photo');
 
   var isTitleFieldValid = function (titleField) {
     var currentLength = titleField.value.length;
@@ -158,8 +168,65 @@
     return (validateTitleField() && validatePriceField());
   };
 
-  titleEl.addEventListener('input', validateTitleField);
-  priceEl.addEventListener('input', validatePriceField);
+  var initAdForm = function () {
+    // для поля числа комнат в разметке указано несоответствующее числу гостей значение,
+    // а без их изменения не происходит валидации, поэтому вручную вызову валидацию на инициализации
+    onAccomodationChange();
+    // для указанного в разметке типа апартаментов плейсхолдер цены неправильный, поэтому вручную вызову валидацию на инициализации
+    onTypeFieldChange();
+  };
+
+  var onTitleFieldInput = function () {
+    validateTitleField();
+  };
+
+  var onPriceFieldInput = function () {
+    validatePriceField();
+  };
+
+  var resetPage = function () {
+    // TODO: как-то тут вызываются функции отовсюду =(
+    // TODO: возможно, сделать одну функцию, которая вызывает методы сброса форм объявления и фильтров, если она еще где-нибудь понадобится
+    // TODO А вообще, наверное, эту функцию стоит объединить с setMapActive, ведь по сути делают они все только вместе - вкл/выкл страницу
+    adFormEl.reset();
+    filtersFormEl.reset();
+
+    // TODO выделить в отдельную функцию
+    // очистка аватарки
+    avatarImageEl.src = AVATAR_DEFAULT_SRC;
+    // очистка фоток
+    var uploadedPhotos = adFormEl.querySelectorAll('.ad-form__photo');
+    uploadedPhotos.forEach(function (currentPhoto, index) {
+      if (!index) {
+        var imgEl = currentPhoto.querySelector('img');
+        if (imgEl) {
+          imgEl.remove();
+        }
+      } else {
+        currentPhoto.remove();
+      }
+    });
+
+    window.map.clearCurrentPins();
+    window.card.remove();
+
+    var mainPinEl = document.querySelector('.map__pin--main');
+    mainPinEl.style = MAIN_PIN_DEFAULT_STYLE;
+    // FIXME убрать эту константу (перемещая функцию fillAddress)
+    var MainPinPointerOffset = {
+      X: -31,
+      Y: -84 // проверить 80 или 84. Думаю, что 84 (картинка 62 и стрелка еще 22)
+    };
+    window.map.fillAddress(mainPinEl, MainPinPointerOffset);
+    window.map.setActive(false);
+  };
+
+  var onResetBtnClick = function () {
+    resetPage();
+  };
+
+  titleEl.addEventListener('input', onTitleFieldInput);
+  priceEl.addEventListener('input', onPriceFieldInput);
 
   typeEl.addEventListener('change', onTypeFieldChange);
   timeinEl.addEventListener('change', onTimeinFieldChange);
@@ -167,43 +234,31 @@
   capacityEl.addEventListener('change', onAccomodationChange);
   roomCountEl.addEventListener('change', onAccomodationChange);
 
-  // похоже, надо один раз вызвать обработчик события change поля количества комннт,
-  // потому что в разметке указано несоответствующее ТЗ значение
-  // TODO: похоже, все эти три ручных вызова надо будет класть в обновление формы нового объявления
-  onAccomodationChange();
-  // ну и разок вызвать валидацию поля цены (потому что при дефолтном значении "квартира")
-  // дефолтное значение ноль - не подходит
-  validatePriceField();
-  onTypeFieldChange();
-
-  // TODO: доделать потом, потому что нужно понимать, как работает показ карточек и тд, чтобы успешно чистить все это при отправке
+  resetBtnEl.addEventListener('click', onResetBtnClick);
 
   var uploadSuccess = function () {
-    // closeImgEditWindow();
-    //
-    // var successPopupEl = successTemplate.cloneNode(true);
-    // mainEl.appendChild(successPopupEl);
-    //
-    // var successPopupCloseBtnEl = document.querySelector('.success__button');
-    //
-    // var removeSuccessPopup = function () {
-    //   if (mainEl.contains(successPopupEl)) {
-    //     mainEl.removeChild(successPopupEl);
-    //   }
-    //   successPopupCloseBtnEl.removeEventListener('click', removeSuccessPopup);
-    //   window.removeEventListener('click', removeSuccessPopup);
-    //   document.removeEventListener('keydown', onUploadSuccessEscPress);
-    // };
-    //
-    // var onUploadSuccessEscPress = function (evt) {
-    //   if (window.util.isEscPressed(evt)) {
-    //     removeSuccessPopup();
-    //   }
-    // };
-    //
-    // successPopupCloseBtnEl.addEventListener('click', removeSuccessPopup);
-    // window.addEventListener('click', removeSuccessPopup);
-    // document.addEventListener('keydown', onUploadSuccessEscPress);
+    resetPage();
+
+    var successPopupEl = document.querySelector('#success').content.querySelector('.success').cloneNode(true);
+    mainEl.appendChild(successPopupEl);
+
+    var removeSuccessPopup = function () {
+      successPopupEl.remove();
+      document.removeEventListener('click', onSuccessPopupClick);
+      document.removeEventListener('keydown', onSuccessPopupEscPress);
+    };
+
+    var onSuccessPopupEscPress = function (evt) {
+      if (window.util.isEscPressed(evt)) {
+        removeSuccessPopup();
+      }
+    };
+
+    var onSuccessPopupClick = function () {
+      removeSuccessPopup();
+    };
+    document.addEventListener('click', onSuccessPopupClick);
+    document.addEventListener('keydown', onSuccessPopupEscPress);
   };
 
   var uploadError = function () {
@@ -252,11 +307,10 @@
   };
 
   adFormEl.addEventListener('submit', function (evt) {
-    var isformValid = validateForm();
-    var uploadData = new FormData(adFormEl);
-    if (isformValid) {
+    if (validateForm()) {
+      var uploadData = new FormData(adFormEl);
       evt.preventDefault();
-      window.backend.upload(UPLOAD_URL, uploadData, uploadSuccess, uploadError);
+      window.backend.upload(uploadData, uploadSuccess, uploadError);
     }
   });
 
@@ -281,12 +335,6 @@
       }
     }
   };
-
-  var avatarFileEl = adFormEl.querySelector('#avatar');
-  var avatarImageEl = adFormEl.querySelector('.ad-form-header__preview img');
-  var photoContainerEl = adFormEl.querySelector('.ad-form__photo-container');
-  var photoFileEl = photoContainerEl.querySelector('#images');
-  var photoEl = photoContainerEl.querySelector('.ad-form__photo');
 
   avatarFileEl.addEventListener('change', function () {
     loadImgFromDisc(avatarFileEl, avatarImageEl);
@@ -316,5 +364,9 @@
     newImageEl.insertAdjacentElement('afterbegin', imageEl);
     photoContainerEl.insertAdjacentElement('beforeend', newImageEl);
   });
+
   // TODO При сбросе формы, страница возвращается в исходное неактивное состояние и метка перемещается на изначальные координаты. Соответствующее значение поля ввода адреса так же должно быть обновлено.
+  window.adForm = {
+    init: initAdForm
+  };
 })();
