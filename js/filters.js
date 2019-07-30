@@ -4,7 +4,7 @@
   var SelectFiltersMap = {
     'housing-type': {
       'type': 'equal',
-      'key': 'type',
+      'offerKey': 'type',
       'values': {
         'any': 'any',
         'palace': 'palace',
@@ -15,7 +15,7 @@
     },
     'housing-price': {
       'type': 'range',
-      'key': 'price',
+      'offerKey': 'price',
       'values': {
         'any': 'any',
         'low': {
@@ -34,7 +34,7 @@
     },
     'housing-rooms': {
       'type': 'equal',
-      'key': 'rooms',
+      'offerKey': 'rooms',
       'values': {
         'any': 'any',
         '1': 1,
@@ -44,7 +44,7 @@
     },
     'housing-guests': {
       'type': 'equal',
-      'key': 'guests',
+      'offerKey': 'guests',
       'values': {
         'any': 'any',
         '1': 1,
@@ -53,15 +53,6 @@
       }
     }
   };
-  // var FilterTypeMap = {
-  //   'equal': function (a, b) {
-  //     return a === b;
-  //   },
-  //   'range': function (value, min, max) {
-  //     return (value >= min && value <= max);
-  //   }
-  // };
-  // TODO переименовать в BooleanFilters!
   var CheckboxFiltersMap = {
     'filter-wifi': 'wifi',
     'filter-dishwasher': 'dishwasher',
@@ -81,11 +72,10 @@
         if (selectorValue !== 'any') {
           var checkType = SelectFiltersMap[currentSelect].type;
           pins = pins.filter(function (currentPin) {
-            var offerValue = currentPin.offer[SelectFiltersMap[currentSelect].key];
+            var offerValue = currentPin.offer[SelectFiltersMap[currentSelect].offerKey];
             if (checkType === 'equal') {
               return selectorValue === offerValue;
             }
-            // проверка checkType на range избытычна, но если бы типов проверок было 3, то ...
             return offerValue >= selectorValue.MIN && offerValue <= selectorValue.MAX;
           });
         }

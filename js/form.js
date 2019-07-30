@@ -61,7 +61,6 @@
     }
   };
 
-
   var adFormEl = document.querySelector('.ad-form');
   var titleEl = adFormEl.querySelector('#title');
   var typeEl = adFormEl.querySelector('#type');
@@ -71,7 +70,6 @@
   var roomCountEl = adFormEl.querySelector('#room_number');
   var capacityEl = adFormEl.querySelector('#capacity');
 
-
   var isTitleFieldValid = function (titleField) {
     var currentLength = titleField.value.length;
     return currentLength >= TitleFieldValidationData.LENGTH.MIN && currentLength <= TitleFieldValidationData.LENGTH.MAX;
@@ -79,12 +77,12 @@
 
   var setTitleFieldState = function (titleField, isValid) {
     if (isValid) {
-      titleField.setCustomValidity('');
       titleField.style[InvalidFieldStyles.VALIDITY] = InvalidFieldStyles.VALID;
-    } else {
-      titleField.setCustomValidity(TitleFieldValidationData.INVALID_TEXT);
-      titleField.style[InvalidFieldStyles.VALIDITY] = InvalidFieldStyles.INVALID;
+      return titleField.setCustomValidity('');
     }
+
+    titleField.style[InvalidFieldStyles.VALIDITY] = InvalidFieldStyles.INVALID;
+    return titleField.setCustomValidity(TitleFieldValidationData.INVALID_TEXT);
   };
 
   var validateTitleField = function () {
@@ -94,24 +92,24 @@
   };
 
   var isPriceFieldValid = function (priceField) {
-    var minPrice = getMinPricePerNight();
+    var minPrice = TypeFieldValidationData[typeEl.value].MIN_PRICE;
     return priceField.value > minPrice && priceField.value <= PriceFieldValidationData.MAX_VALUE;
   };
 
   var setPriceFieldState = function (priceField, isValid) {
     if (isValid) {
-      priceField.setCustomValidity('');
       priceField.style[InvalidFieldStyles.VALIDITY] = InvalidFieldStyles.VALID;
-    } else {
-      var minPrice = getMinPricePerNight();
-      var invalidText = '';
-      if (minPrice) {
-        invalidText = PriceFieldValidationData.INVALID_TEXT.MIN + minPrice + '. ';
-      }
-      invalidText += PriceFieldValidationData.INVALID_TEXT.MAX;
-      priceField.setCustomValidity(invalidText);
-      priceField.style[InvalidFieldStyles.VALIDITY] = InvalidFieldStyles.INVALID;
+      return priceField.setCustomValidity('');
     }
+
+    var minPrice = TypeFieldValidationData[typeEl.value].MIN_PRICE;
+    var invalidText = '';
+    if (minPrice) {
+      invalidText = PriceFieldValidationData.INVALID_TEXT.MIN + minPrice + '. ';
+    }
+    invalidText += PriceFieldValidationData.INVALID_TEXT.MAX;
+    priceField.style[InvalidFieldStyles.VALIDITY] = InvalidFieldStyles.INVALID;
+    return priceField.setCustomValidity(invalidText);
   };
 
   var validatePriceField = function () {
@@ -124,10 +122,6 @@
     priceEl.placeholder = TypeFieldValidationData[typeEl.value].MIN_PRICE;
     // так как параметры типа апартаментов изменились, надо вручную проверить, что поле цены валидно
     validatePriceField();
-  };
-
-  var getMinPricePerNight = function () {
-    return TypeFieldValidationData[typeEl.value].MIN_PRICE;
   };
 
   var onTimeinFieldChange = function () {
@@ -146,12 +140,12 @@
 
   var setCapacityFieldState = function (capacityField, isValid) {
     if (isValid) {
-      capacityField.setCustomValidity('');
       capacityField.style[InvalidFieldStyles.VALIDITY] = InvalidFieldStyles.VALID;
-    } else {
-      capacityField.setCustomValidity(RoomCountValidationData[roomCountEl.value].INVALID_TEXT);
-      capacityField.style[InvalidFieldStyles.VALIDITY] = InvalidFieldStyles.INVALID;
+      return capacityField.setCustomValidity('');
     }
+
+    capacityField.style[InvalidFieldStyles.VALIDITY] = InvalidFieldStyles.INVALID;
+    return capacityField.setCustomValidity(RoomCountValidationData[roomCountEl.value].INVALID_TEXT);
   };
 
   var onAccomodationChange = function () {
@@ -163,7 +157,6 @@
   var validateForm = function () {
     return (validateTitleField() && validatePriceField());
   };
-
 
   titleEl.addEventListener('input', validateTitleField);
   priceEl.addEventListener('input', validatePriceField);
@@ -273,7 +266,6 @@
     if (file) {
       var fileName = file.name.toLowerCase();
 
-
       var matches = FILE_TYPES.some(function (it) {
         return fileName.endsWith(it);
       });
@@ -295,7 +287,6 @@
   var photoContainerEl = adFormEl.querySelector('.ad-form__photo-container');
   var photoFileEl = photoContainerEl.querySelector('#images');
   var photoEl = photoContainerEl.querySelector('.ad-form__photo');
-
 
   avatarFileEl.addEventListener('change', function () {
     loadImgFromDisc(avatarFileEl, avatarImageEl);

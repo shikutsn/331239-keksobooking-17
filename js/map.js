@@ -19,11 +19,11 @@
     WIDTH: 65,
     HEIGHT: 84
   };
-  var MapStates = {
+  var BlockStates = {
     ACTIVE: 'active',
     INACTIVE: 'inactive'
   };
-  var MapStatesMap = {
+  var BlockStatesMap = {
     'active': {
       styleAction: 'remove',
       elementsAction: window.util.enableElement
@@ -31,16 +31,15 @@
     'inactive': {
       styleAction: 'add',
       elementsAction: window.util.disableElement
-    },
-    'mapClass': 'map--faded',
-    'formClass': 'ad-form--disabled'
+    }
   };
+  var DISABLED_MAP_CLS = 'map--faded';
+  var DISABLED_AD_FORM_CS = 'ad-form--disabled';
   var PinData = {
     ORDINATE: {
       MIN: 130,
       MAX: 630
     },
-    // FIXME: используются ли константы абсцисс?
     ABSCISS: {
       MIN: 0,
       MAX: 1200
@@ -48,8 +47,6 @@
   };
 
   var getAdjustedPinCoords = function (coord) {
-    // подразумеваю, что в данных хранятся координаты, на которые указывает острие пина
-    // соответственно, для вычисления координат самой кнопки нужно вычесть смещение
     return {
       x: coord.x + PinPointerOffset.X,
       y: coord.y + PinPointerOffset.Y
@@ -72,9 +69,9 @@
   var fillFragment = function (pins, template) {
     var fragment = document.createDocumentFragment();
 
-    for (var i = 0; i < pins.length; i++) {
-      fragment.appendChild(renderPin(pins[i], template));
-    }
+    pins.forEach(function (currentPin) {
+      fragment.appendChild(renderPin(currentPin, template));
+    });
 
     return fragment;
   };
@@ -91,8 +88,8 @@
   };
 
   var clearCurrentPins = function () {
-    document.querySelectorAll('.map__pin:not(.map__pin--main)').forEach(function (it) {
-      it.remove();
+    document.querySelectorAll('.map__pin:not(.map__pin--main)').forEach(function (currentPin) {
+      currentPin.remove();
     });
   };
 
@@ -104,27 +101,21 @@
   var filtersFormInnerEls = Array.from(filtersFormEl.children);
 
   var setMapState = function (action) {
-    mapEl.classList[MapStatesMap[action].styleAction](MapStatesMap.mapClass);
-    adFormEl.classList[MapStatesMap[action].styleAction](MapStatesMap.formClass);
-    adFormInnerEls.forEach(MapStatesMap[action].elementsAction);
+    mapEl.classList[BlockStatesMap[action].styleAction](DISABLED_MAP_CLS);
+    adFormEl.classList[BlockStatesMap[action].styleAction](DISABLED_AD_FORM_CS);
+    adFormInnerEls.forEach(BlockStatesMap[action].elementsAction);
   };
 
   var setFiltersFormState = function (action) {
-    filtersFormInnerEls.forEach(MapStatesMap[action].elementsAction);
+    filtersFormInnerEls.forEach(BlockStatesMap[action].elementsAction);
   };
 
   var setMapActive = function (mapState) {
-    return mapState ? setMapState(MapStates.ACTIVE) : setMapState(MapStates.INACTIVE);
-    // if (mapState) {
-    //   setMapState(MapStates.ACTIVE);
-    // } else {
-    //   setMapState(MapStates.INACTIVE);
-    // }
+    return mapState ? setMapState(BlockStates.ACTIVE) : setMapState(BlockStates.INACTIVE);
   };
 
   var setFiltersFormActive = function (filtersFormState) {
-    // TODO казалось бы, причем тут MapStates? Но выключание формы фильтров начинало свою жизнь вместе с картой, а потом переехало в onLoadingSuccess
-    return filtersFormState ? setFiltersFormState(MapStates.ACTIVE) : setFiltersFormState(MapStates.INACTIVE);
+    return filtersFormState ? setFiltersFormState(BlockStates.ACTIVE) : setFiltersFormState(BlockStates.INACTIVE);
   };
 
   var mainPinEl = mapEl.querySelector('.map__pin--main');
@@ -178,7 +169,10 @@
   fillAddress(mainPinEl, MainPinPointerInitialOffset);
 
   mainPinEl.addEventListener('mousedown', function (evt) {
-    setMapActive(true);
+    if (mapEl.classList.contains(DISABLED_MAP_CLS)) {
+      window.backend.download(onLoadingSuccess, onLoadingError);
+      setMapActive(true);
+    }
 
     var startCoord = {
       x: evt.clientX,
@@ -225,7 +219,6 @@
     var onMouseUp = function (upEvt) {
       upEvt.preventDefault();
 
-      window.backend.download(onLoadingSuccess, onLoadingError);
       fillAddress(mainPinEl, MainPinPointerOffset);
 
       document.removeEventListener('mousemove', onMouseMove);

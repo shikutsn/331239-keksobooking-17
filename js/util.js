@@ -14,12 +14,12 @@
     return arr[getRandomNumber(0, arr.length)];
   };
 
-  var disableElement = function (it) {
-    it.disabled = true;
+  var disableElement = function (element) {
+    element.disabled = true;
   };
 
-  var enableElement = function (it) {
-    it.disabled = false;
+  var enableElement = function (element) {
+    element.disabled = false;
   };
 
   // перемешивание алгоритмом Фишера — Йетса

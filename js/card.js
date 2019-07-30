@@ -146,11 +146,11 @@
     removeCard();
     var cardEl = cardTemplateEl.cloneNode(true);
 
-    for (var key in FillCardMap) {
-      if (FillCardMap.hasOwnProperty(key)) {
-        var currentField = cardEl.querySelector('.' + key);
-        var currentAction = FillCardMap[key].ACTION;
-        var currentDataKeys = FillCardMap[key].DATA;
+    for (var currentCardField in FillCardMap) {
+      if (FillCardMap.hasOwnProperty(currentCardField)) {
+        var currentField = cardEl.querySelector('.' + currentCardField);
+        var currentAction = FillCardMap[currentCardField].ACTION;
+        var currentDataKeys = FillCardMap[currentCardField].DATA;
 
         currentAction(currentField, pin, currentDataKeys);
       }
@@ -185,7 +185,6 @@
       var clickedAd = window.filters.getPins()[currentPinIndex];
       renderCard(clickedAd);
     }
-
   };
 
   mapPinsEl.addEventListener('click', onPinClick);
