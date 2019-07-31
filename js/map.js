@@ -100,6 +100,8 @@
   var filtersFormEl = document.querySelector('.map__filters');
   var filtersFormInnerEls = Array.from(filtersFormEl.children);
 
+  var isDataLoaded = false;
+
   var setMapState = function (action) {
     mapEl.classList[BlockStatesMap[action].styleAction](DISABLED_MAP_CLS);
     adFormEl.classList[BlockStatesMap[action].styleAction](DISABLED_AD_FORM_CS);
@@ -125,6 +127,8 @@
   var mainPinEl = mapEl.querySelector('.map__pin--main');
 
   var onLoadingError = function (errorMessage) {
+    // TODO эта ошибка показывается в двух случаях, надо бы их объединить
+    // да и mainEl и шаблон вынести за функцию
     var mainEl = document.querySelector('main');
     var errorTemplateEl = document.querySelector('#error').content.querySelector('.error');
     var errorEl = errorTemplateEl.cloneNode(true);
@@ -135,12 +139,16 @@
 
     var removeErrorPopup = function () {
       mainEl.removeChild(errorEl);
-      errorPopupCloseBtnEl.removeEventListener('click', onErrorPopupClose);
-      document.removeEventListener('click', onErrorPopupClose);
+      errorPopupCloseBtnEl.removeEventListener('click', onErrorPopupCloseBtnClick);
+      document.removeEventListener('click', onErrorPopupClick);
       document.removeEventListener('keydown', onErrorEscPress);
     };
 
-    var onErrorPopupClose = function () {
+    var onErrorPopupClick = function () {
+      removeErrorPopup();
+    };
+
+    var onErrorPopupCloseBtnClick = function () {
       removeErrorPopup();
     };
 
@@ -150,7 +158,7 @@
       }
     };
 
-    document.addEventListener('click', onErrorPopupClose);
+    document.addEventListener('click', onErrorPopupClick);
     document.addEventListener('keydown', onErrorEscPress);
   };
 
@@ -158,6 +166,7 @@
     setFiltersFormActive(true);
     window.data.set(pins);
     renderMapPins(pins);
+    isDataLoaded = true;
   };
 
   // FIXME: возможно, место этой функции в модуле с формой?
@@ -176,10 +185,13 @@
 
   mainPinEl.addEventListener('mousedown', function (evt) {
     if (mapEl.classList.contains(DISABLED_MAP_CLS)) {
-      window.backend.download(onLoadingSuccess, onLoadingError);
+      // TODO сейчас, при ошибке загрузки данных, окно с ошибкой сразу пропадает, потому что клик протекает вниз и срабатывает. Разобраться
+      // TODO логичнее, что загрузка данных происходит после отпускания кнопки, но тогда пин таскается круглым, это плохо
+      // или надо как-то иначе определять момент, что пока что надо грузить данные
+      // TODO Убедиться, что нормально работает при повторных загрузках (после сброса формы)
+      // но, вообще говоря, решение с флагом мне не нравится
       setMapActive(true);
     }
-
     var startCoord = {
       x: evt.clientX,
       y: evt.clientY
@@ -225,6 +237,10 @@
 
     var onMouseUp = function (upEvt) {
       upEvt.preventDefault();
+
+      if (!isDataLoaded) {
+        window.backend.download(onLoadingSuccess, onLoadingError);
+      }
 
       fillAddress(mainPinEl, MainPinPointerOffset);
 

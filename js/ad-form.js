@@ -74,6 +74,9 @@
   var resetBtnEl = adFormEl.querySelector('.ad-form__reset');
 
   var mainEl = document.querySelector('main');
+  var successTemplateEl = document.querySelector('#success').content.querySelector('.success');
+  var errorTemplateEl = document.querySelector('#error').content.querySelector('.error');
+
   var avatarFileEl = adFormEl.querySelector('#avatar');
   var avatarImageEl = adFormEl.querySelector('.ad-form-header__preview img');
   var photoContainerEl = adFormEl.querySelector('.ad-form__photo-container');
@@ -213,6 +216,7 @@
     var mainPinEl = document.querySelector('.map__pin--main');
     mainPinEl.style = MAIN_PIN_DEFAULT_STYLE;
     // FIXME убрать эту константу (перемещая функцию fillAddress)
+    // FIXME или сделать функцию в модуле map типа resetMainPin()
     var MainPinPointerOffset = {
       X: -31,
       Y: -84 // проверить 80 или 84. Думаю, что 84 (картинка 62 и стрелка еще 22)
@@ -239,7 +243,7 @@
   var uploadSuccess = function () {
     resetPage();
 
-    var successPopupEl = document.querySelector('#success').content.querySelector('.success').cloneNode(true);
+    var successPopupEl = successTemplateEl.cloneNode(true);
     mainEl.appendChild(successPopupEl);
 
     var removeSuccessPopup = function () {
@@ -248,62 +252,49 @@
       document.removeEventListener('keydown', onSuccessPopupEscPress);
     };
 
+    var onSuccessPopupClick = function () {
+      removeSuccessPopup();
+    };
+
     var onSuccessPopupEscPress = function (evt) {
       if (window.util.isEscPressed(evt)) {
         removeSuccessPopup();
       }
     };
 
-    var onSuccessPopupClick = function () {
-      removeSuccessPopup();
-    };
     document.addEventListener('click', onSuccessPopupClick);
     document.addEventListener('keydown', onSuccessPopupEscPress);
   };
 
   var uploadError = function () {
-    // imgEditWindowEl.classList.add('hidden');
-    //
-    // var errorPopupEl = errorTemplate.cloneNode(true);
-    // mainEl.appendChild(errorPopupEl);
-    //
-    // var errorPopupAgainBtnEl = document.querySelector('.error__button--again');
-    // var errorPopupAnotherBtnEl = document.querySelector('.error__button--another');
-    //
-    // var removeErrorEvtListeners = function () {
-    //   window.removeEventListener('click', removeErrorPopup);
-    //   document.removeEventListener('keydown', removeErrorPopup);
-    // };
-    //
-    // var removeErrorPopup = function () {
-    //   if (mainEl.contains(errorPopupEl)) {
-    //     mainEl.removeChild(errorPopupEl);
-    //   }
-    //   removeErrorEvtListeners();
-    // };
-    //
-    // var onUploadErrorEscPress = function (evt) {
-    //   if (window.util.isEscPressed(evt)) {
-    //     removeErrorPopup();
-    //   }
-    // };
-    //
-    // window.addEventListener('click', removeErrorPopup);
-    // document.addEventListener('keydown', onUploadErrorEscPress);
-    //
-    // errorPopupAgainBtnEl.addEventListener('click', function (evt) {
-    //   evt.stopPropagation();
-    //   mainEl.removeChild(errorPopupEl);
-    //   imgEditWindowEl.classList.remove('hidden');
-    //   removeErrorEvtListeners();
-    // });
-    //
-    // errorPopupAnotherBtnEl.addEventListener('click', function (evt) {
-    //   evt.stopPropagation();
-    //   closeImgEditWindow();
-    //   removeErrorPopup();
-    //   uploadFileEl.click();
-    // });
+    var errorPopupEl = errorTemplateEl.cloneNode(true);
+    mainEl.appendChild(errorPopupEl);
+
+    var errorPopupCloseBtnEl = errorPopupEl.querySelector('.error__button');
+
+    var removeErrorPopup = function () {
+      errorPopupEl.remove();
+      document.removeEventListener('click', onErrorPopupClick);
+      document.removeEventListener('keydown', onErrorPopupEscPress);
+    };
+
+    var onErrorPopupClick = function () {
+      removeErrorPopup();
+    };
+
+    var onErrorPopupEscPress = function (evt) {
+      if (window.util.isEscPressed(evt)) {
+        removeErrorPopup();
+      }
+    };
+
+    var onErrorPopupCloseBtnClick = function () {
+      removeErrorPopup();
+    };
+
+    errorPopupCloseBtnEl.addEventListener('click', onErrorPopupCloseBtnClick);
+    document.addEventListener('click', onErrorPopupClick);
+    document.addEventListener('keydown', onErrorPopupEscPress);
   };
 
   adFormEl.addEventListener('submit', function (evt) {
