@@ -2,22 +2,37 @@
 
 (function () {
   // TODO: пройтись по замечаниям Вадима из readme.md от 29.07. Поискать подобные случаи и их фикс
+  // TODO а вообще, интересная тема - вынести функции по переключению режимов страницы в отдельный модуль
+  // TODO и другая интересная тема - манипуляции с mainPin тоже вынести в отдельный модуль
   var PINS_MAX_COUNT = 5;
-  var PinPointerOffset = {
-    X: -25,
-    Y: -70
-  };
-  var MainPinPointerOffset = {
-    X: -31,
-    Y: -84 // проверить 80 или 84. Думаю, что 84 (картинка 62 и стрелка еще 22)
-  };
-  var MainPinPointerInitialOffset = {
-    X: -31,
-    Y: -31
+  var MAIN_PIN_DEFAULT_STYLE = 'left: 570px; top: 375px;';
+  // var PinPointerOffset = {
+  //   X: -25,
+  //   Y: -70
+  // };
+  var pinSize = {
+    WIDTH: 50,
+    HEIGHT: 70
   };
   var MainPinSize = {
-    WIDTH: 65,
-    HEIGHT: 84
+    MAP_ACTIVE: {
+      WIDTH: 65,
+      HEIGHT: 65
+    },
+    MAP_INACTIVE: {
+      WIDTH: 65,
+      HEIGHT: 84
+    }
+  };
+  var PinData = {
+    ORDINATE: {
+      MIN: 130,
+      MAX: 630
+    },
+    ABSCISS: {
+      MIN: 0,
+      MAX: 1200
+    }
   };
   var BlockStates = {
     ACTIVE: 'active',
@@ -35,31 +50,13 @@
   };
   var DISABLED_MAP_CLS = 'map--faded';
   var DISABLED_AD_FORM_CS = 'ad-form--disabled';
-  var PinData = {
-    ORDINATE: {
-      MIN: 130,
-      MAX: 630
-    },
-    ABSCISS: {
-      MIN: 0,
-      MAX: 1200
-    }
-  };
-
-  var getAdjustedPinCoords = function (coord) {
-    return {
-      x: coord.x + PinPointerOffset.X,
-      y: coord.y + PinPointerOffset.Y
-    };
-  };
 
   var renderPin = function (pin, template) {
     var pinEl = template.cloneNode(true);
     var pinImgEl = pinEl.querySelector('img');
-    var adjustedCoords = getAdjustedPinCoords(pin.location);
 
-    pinEl.style.left = adjustedCoords.x + 'px';
-    pinEl.style.top = adjustedCoords.y + 'px';
+    pinEl.style.left = pin.location.x - pinSize.WIDTH / 2 + 'px';
+    pinEl.style.top = pin.location.y - pinSize.HEIGHT + 'px';
     pinImgEl.src = pin.author.avatar;
     pinImgEl.alt = pin.offer.title;
 
@@ -128,7 +125,7 @@
   var mainPinEl = mapEl.querySelector('.map__pin--main');
 
   var onLoadingError = function (errorMessage) {
-    // TODO эта ошибка показывается в двух случаях, надо бы их объединить
+    // TODO это окно ошибки показывается в двух случаях, надо бы их объединить
     // да и mainEl и шаблон вынести за функцию
     var mainEl = document.querySelector('main');
     var errorTemplateEl = document.querySelector('#error').content.querySelector('.error');
@@ -171,18 +168,20 @@
   };
 
   // FIXME: возможно, место этой функции в модуле с формой?
-  // не передавать смещение, а передавать флаг - метка при неактивной карте или при активной и в зависимости от этого применят разные смещения
-  var fillAddress = function (pin, offset) {
-    // заполняет поле адреса, вычитая смещение из ДОМ-координат
-    // 1) если брать координаты адреса из координат ДОМ-элемента, то смещение надо вычитать
-    // 2) если же из координат адреса делать ДОМ-координаты, то смещение прибавлять
-    // потому что изначальное смещение - отрицательное, то есть для случая (2)
-    addressEl.value = (pin.offsetLeft - offset.X) + ', ' + (pin.offsetTop - offset.Y);
+  var fillAddress = function (addressFieldEl, pinEl, isMapActive) {
+    var addressX = isMapActive ? pinEl.offsetLeft + MainPinSize.MAP_ACTIVE.WIDTH / 2 : pinEl.offsetLeft + MainPinSize.MAP_INACTIVE.WIDTH / 2;
+    var addressY = isMapActive ? pinEl.offsetTop + MainPinSize.MAP_ACTIVE.HEIGHT : pinEl.offsetTop + MainPinSize.MAP_INACTIVE.HEIGHT;
+    addressFieldEl.value = Math.round(addressX) + ', ' + addressY;
   };
 
+  // TODO а вообще, это надо бы вынести в какой-нибудь init
   // первоначальное заполнение поля адреса при еще неактивной странице
-  // в начале же он круглый, поэтому там другие смещения
-  fillAddress(mainPinEl, MainPinPointerInitialOffset);
+  fillAddress(addressEl, mainPinEl, false);
+
+  var resetMainPin = function () {
+    mainPinEl.style = MAIN_PIN_DEFAULT_STYLE;
+    fillAddress(addressEl, mainPinEl, false);
+  };
 
   mainPinEl.addEventListener('mousedown', function (evt) {
     if (mapEl.classList.contains(DISABLED_MAP_CLS)) {
@@ -208,11 +207,13 @@
 
       // TODO упростить расчеты координат
       // TODO объект boundaries?
+      // см лекцию 8, 50мин. Там про объекты, конструкторы, методы прототипов. Мб стоит демку там же посмотреть, даже точно стоит!
+      // TODO а вообще, двигается плохо - если мышка двигается из-за границы карты, то пин ползает, не будучи привязанным к курсору мыши. Так же было в кекстаграме
       if (newCoord.x < PinData.ABSCISS.MIN) {
         newCoord.x = PinData.ABSCISS.MIN;
       }
-      if (newCoord.x > PinData.ABSCISS.MAX - MainPinSize.WIDTH) {
-        newCoord.x = PinData.ABSCISS.MAX - MainPinSize.WIDTH;
+      if (newCoord.x > PinData.ABSCISS.MAX - MainPinSize.MAP_ACTIVE.WIDTH) {
+        newCoord.x = PinData.ABSCISS.MAX - MainPinSize.MAP_ACTIVE.WIDTH;
       }
       if (newCoord.y < PinData.ORDINATE.MIN) {
         newCoord.y = PinData.ORDINATE.MIN;
@@ -223,7 +224,7 @@
       mainPinEl.style.left = newCoord.x + 'px';
       mainPinEl.style.top = newCoord.y + 'px';
 
-      fillAddress(mainPinEl, MainPinPointerOffset);
+      fillAddress(addressEl, mainPinEl, true);
 
       startCoord = {
         x: moveEvt.clientX,
@@ -238,7 +239,7 @@
         window.backend.download(onLoadingSuccess, onLoadingError);
       }
 
-      fillAddress(mainPinEl, MainPinPointerOffset);
+      fillAddress(addressEl, mainPinEl, true);
 
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
@@ -255,6 +256,6 @@
     renderPins: renderMapPins,
     clearCurrentPins: clearCurrentPins,
     setActive: setMapActive,
-    fillAddress: fillAddress
+    resetMainPin: resetMainPin
   };
 })();

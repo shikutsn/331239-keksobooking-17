@@ -2,7 +2,6 @@
 
 (function () {
   var FILE_TYPES = ['gif', 'jpg', 'jpeg', 'png'];
-  var MAIN_PIN_DEFAULT_STYLE = 'left: 570px; top: 375px;';
   var AVATAR_DEFAULT_SRC = 'img/muffin-grey.svg';
   var ApartmentImageData = {
     ALT_TEXT: 'Фотография жилья',
@@ -50,15 +49,7 @@
     window.map.clearCurrentPins();
     window.card.remove();
 
-    var mainPinEl = document.querySelector('.map__pin--main');
-    mainPinEl.style = MAIN_PIN_DEFAULT_STYLE;
-    // FIXME убрать эту константу (перемещая функцию fillAddress)
-    // FIXME или сделать функцию в модуле map типа resetMainPin()
-    var MainPinPointerOffset = {
-      X: -31,
-      Y: -84 // проверить 80 или 84. Думаю, что 84 (картинка 62 и стрелка еще 22)
-    };
-    window.map.fillAddress(mainPinEl, MainPinPointerOffset);
+    window.map.resetMainPin();
     window.map.setActive(false);
   };
 
