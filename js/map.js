@@ -110,6 +110,9 @@
     if (action === BlockStates.ACTIVE) {
       window.adForm.init();
     }
+    if (action === BlockStates.INACTIVE) {
+      isDataLoaded = false;
+    }
   };
 
   var setFiltersFormState = function (action) {
