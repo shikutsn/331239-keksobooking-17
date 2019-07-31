@@ -4,15 +4,22 @@
   // TODO: пройтись по замечаниям Вадима из readme.md от 29.07. Поискать подобные случаи и их фикс
   // TODO а вообще, интересная тема - вынести функции по переключению режимов страницы в отдельный модуль
   // TODO и другая интересная тема - манипуляции с mainPin тоже вынести в отдельный модуль
-  var PINS_MAX_COUNT = 5;
-  var MAIN_PIN_DEFAULT_STYLE = 'left: 570px; top: 375px;';
-  // var PinPointerOffset = {
-  //   X: -25,
-  //   Y: -70
-  // };
-  var pinSize = {
-    WIDTH: 50,
-    HEIGHT: 70
+  var PinData = {
+    MAX_COUNT: 5,
+    SIZE: {
+      WIDTH: 50,
+      HEIGHT: 70
+    },
+    COORD: {
+      ABSCISS: {
+        MIN: 0,
+        MAX: 1200
+      },
+      ORDINATE: {
+        MIN: 130,
+        MAX: 630
+      }
+    }
   };
   var MainPinSize = {
     MAP_ACTIVE: {
@@ -24,16 +31,8 @@
       HEIGHT: 84
     }
   };
-  var PinData = {
-    ORDINATE: {
-      MIN: 130,
-      MAX: 630
-    },
-    ABSCISS: {
-      MIN: 0,
-      MAX: 1200
-    }
-  };
+  var MAIN_PIN_DEFAULT_STYLE = 'left: 570px; top: 375px;';
+  // TODO эти константы надо переделать, логика работы функции (раз)блокировки карты сильно эволюционировала
   var BlockStates = {
     ACTIVE: 'active',
     INACTIVE: 'inactive'
@@ -49,14 +48,14 @@
     }
   };
   var DISABLED_MAP_CLS = 'map--faded';
-  var DISABLED_AD_FORM_CS = 'ad-form--disabled';
+  var DISABLED_AD_FORM_CLS = 'ad-form--disabled';
 
   var renderPin = function (pin, template) {
     var pinEl = template.cloneNode(true);
     var pinImgEl = pinEl.querySelector('img');
 
-    pinEl.style.left = pin.location.x - pinSize.WIDTH / 2 + 'px';
-    pinEl.style.top = pin.location.y - pinSize.HEIGHT + 'px';
+    pinEl.style.left = pin.location.x - PinData.SIZE.WIDTH / 2 + 'px';
+    pinEl.style.top = pin.location.y - PinData.SIZE.HEIGHT + 'px';
     pinImgEl.src = pin.author.avatar;
     pinImgEl.alt = pin.offer.title;
 
@@ -78,7 +77,7 @@
       return 'offer' in pin;
     });
     var pinTemplate = document.querySelector('#pin').content.querySelector('.map__pin');
-    var fragment = fillFragment(pinsWithOffer.slice(0, PINS_MAX_COUNT), pinTemplate);
+    var fragment = fillFragment(pinsWithOffer.slice(0, PinData.MAX_COUNT), pinTemplate);
     var pinsEl = document.querySelector('.map__pins');
 
     pinsEl.appendChild(fragment);
@@ -99,7 +98,7 @@
 
   var setMapState = function (action) {
     mapEl.classList[BlockStatesMap[action].styleAction](DISABLED_MAP_CLS);
-    adFormEl.classList[BlockStatesMap[action].styleAction](DISABLED_AD_FORM_CS);
+    adFormEl.classList[BlockStatesMap[action].styleAction](DISABLED_AD_FORM_CLS);
     adFormInnerEls.forEach(BlockStatesMap[action].elementsAction);
     // TODO похоже, придется избавиться от этой мапы и такого выпендрежа с активацией карты. Сделать все вручную несколькими отдельными функциями на вкл/выкл
     if (action === BlockStates.ACTIVE) {
@@ -167,8 +166,7 @@
     renderMapPins(pins);
   };
 
-  // FIXME: возможно, место этой функции в модуле с формой?
-  var fillAddress = function (addressFieldEl, pinEl, isMapActive) {
+  var fillAddressField = function (addressFieldEl, pinEl, isMapActive) {
     var addressX = isMapActive ? pinEl.offsetLeft + MainPinSize.MAP_ACTIVE.WIDTH / 2 : pinEl.offsetLeft + MainPinSize.MAP_INACTIVE.WIDTH / 2;
     var addressY = isMapActive ? pinEl.offsetTop + MainPinSize.MAP_ACTIVE.HEIGHT : pinEl.offsetTop + MainPinSize.MAP_INACTIVE.HEIGHT;
     addressFieldEl.value = Math.round(addressX) + ', ' + addressY;
@@ -176,11 +174,11 @@
 
   // TODO а вообще, это надо бы вынести в какой-нибудь init
   // первоначальное заполнение поля адреса при еще неактивной странице
-  fillAddress(addressEl, mainPinEl, false);
+  fillAddressField(addressEl, mainPinEl, false);
 
   var resetMainPin = function () {
     mainPinEl.style = MAIN_PIN_DEFAULT_STYLE;
-    fillAddress(addressEl, mainPinEl, false);
+    fillAddressField(addressEl, mainPinEl, false);
   };
 
   mainPinEl.addEventListener('mousedown', function (evt) {
@@ -209,22 +207,29 @@
       // TODO объект boundaries?
       // см лекцию 8, 50мин. Там про объекты, конструкторы, методы прототипов. Мб стоит демку там же посмотреть, даже точно стоит!
       // TODO а вообще, двигается плохо - если мышка двигается из-за границы карты, то пин ползает, не будучи привязанным к курсору мыши. Так же было в кекстаграме
-      if (newCoord.x < PinData.ABSCISS.MIN) {
-        newCoord.x = PinData.ABSCISS.MIN;
+      if (newCoord.x < PinData.COORD.ABSCISS.MIN) {
+        newCoord.x = PinData.COORD.ABSCISS.MIN;
       }
-      if (newCoord.x > PinData.ABSCISS.MAX - MainPinSize.MAP_ACTIVE.WIDTH) {
-        newCoord.x = PinData.ABSCISS.MAX - MainPinSize.MAP_ACTIVE.WIDTH;
+      // запоминаем ""коорд мыши"", запоминаем коорд пина
+      // на маузмуве:
+      // записываем координаты смещения (shiftCoord)
+      // от коорд пина отнимаем коорд смещения
+      // перезаписываем ""коорд мыши""
+      // меняем координаты пина (стили): если меньше ограничителя снизу, то равно ему, если больше огр сверху, то равно ему
+      // иначе равно координатам пина
+      if (newCoord.x > PinData.COORD.ABSCISS.MAX - MainPinSize.MAP_ACTIVE.WIDTH) {
+        newCoord.x = PinData.COORD.ABSCISS.MAX - MainPinSize.MAP_ACTIVE.WIDTH;
       }
-      if (newCoord.y < PinData.ORDINATE.MIN) {
-        newCoord.y = PinData.ORDINATE.MIN;
+      if (newCoord.y < PinData.COORD.ORDINATE.MIN) {
+        newCoord.y = PinData.COORD.ORDINATE.MIN;
       }
-      if (newCoord.y > PinData.ORDINATE.MAX) {
-        newCoord.y = PinData.ORDINATE.MAX;
+      if (newCoord.y > PinData.COORD.ORDINATE.MAX) {
+        newCoord.y = PinData.COORD.ORDINATE.MAX;
       }
       mainPinEl.style.left = newCoord.x + 'px';
       mainPinEl.style.top = newCoord.y + 'px';
 
-      fillAddress(addressEl, mainPinEl, true);
+      fillAddressField(addressEl, mainPinEl, true);
 
       startCoord = {
         x: moveEvt.clientX,
@@ -239,7 +244,7 @@
         window.backend.download(onLoadingSuccess, onLoadingError);
       }
 
-      fillAddress(addressEl, mainPinEl, true);
+      fillAddressField(addressEl, mainPinEl, true);
 
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
