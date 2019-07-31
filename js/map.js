@@ -100,18 +100,16 @@
   var filtersFormEl = document.querySelector('.map__filters');
   var filtersFormInnerEls = Array.from(filtersFormEl.children);
 
-  var isDataLoaded = false;
-
   var setMapState = function (action) {
     mapEl.classList[BlockStatesMap[action].styleAction](DISABLED_MAP_CLS);
     adFormEl.classList[BlockStatesMap[action].styleAction](DISABLED_AD_FORM_CS);
     adFormInnerEls.forEach(BlockStatesMap[action].elementsAction);
     // TODO похоже, придется избавиться от этой мапы и такого выпендрежа с активацией карты. Сделать все вручную несколькими отдельными функциями на вкл/выкл
     if (action === BlockStates.ACTIVE) {
-      window.adForm.init();
+      window.validation.init();
     }
     if (action === BlockStates.INACTIVE) {
-      isDataLoaded = false;
+      window.data.reset();
     }
   };
 
@@ -166,10 +164,10 @@
   };
 
   var onLoadingSuccess = function (pins) {
+    // TODO вся инициализация, которая в кекстаграме в мейне должна быть тут
     setFiltersFormActive(true);
     window.data.set(pins);
     renderMapPins(pins);
-    isDataLoaded = true;
   };
 
   // FIXME: возможно, место этой функции в модуле с формой?
@@ -188,11 +186,6 @@
 
   mainPinEl.addEventListener('mousedown', function (evt) {
     if (mapEl.classList.contains(DISABLED_MAP_CLS)) {
-      // TODO сейчас, при ошибке загрузки данных, окно с ошибкой сразу пропадает, потому что клик протекает вниз и срабатывает. Разобраться
-      // TODO логичнее, что загрузка данных происходит после отпускания кнопки, но тогда пин таскается круглым, это плохо
-      // или надо как-то иначе определять момент, что пока что надо грузить данные
-      // TODO Убедиться, что нормально работает при повторных загрузках (после сброса формы)
-      // но, вообще говоря, решение с флагом мне не нравится
       setMapActive(true);
     }
     var startCoord = {
@@ -241,7 +234,7 @@
     var onMouseUp = function (upEvt) {
       upEvt.preventDefault();
 
-      if (!isDataLoaded) {
+      if (!window.data.isLoaded()) {
         window.backend.download(onLoadingSuccess, onLoadingError);
       }
 

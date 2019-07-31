@@ -181,8 +181,7 @@
       activatePin(clickedPin);
       var currentRenderedPins = Array.from(document.querySelectorAll('.' + MapPinsCls.ALL_BUT_MAIN));
       var currentPinIndex = currentRenderedPins.indexOf(clickedPin);
-      // TODO: Все-таки данные фильтрованных пинов торчат из модуля фильтров, а не модуля данных.
-      var clickedAd = window.filters.getPins()[currentPinIndex];
+      var clickedAd = window.data.getFiltered()[currentPinIndex];
       renderCard(clickedAd);
     }
   };

@@ -61,6 +61,8 @@
     'filter-elevator': 'elevator',
     'filter-conditioner': 'conditioner'
   };
+  var FILTER_VALUE_ANY = 'any';
+  var FILTER_CHECK_TYPE_EQUAL = 'equal';
 
   var filtersFormEl = document.querySelector('.map__filters');
 
@@ -69,11 +71,11 @@
       if (SelectFiltersMap.hasOwnProperty(currentSelect)) {
         var currentSelectEl = filtersFormEl.querySelector('#' + currentSelect);
         var selectorValue = SelectFiltersMap[currentSelect].values[currentSelectEl.value];
-        if (selectorValue !== 'any') {
+        if (selectorValue !== FILTER_VALUE_ANY) {
           var checkType = SelectFiltersMap[currentSelect].type;
           pins = pins.filter(function (currentPin) {
             var offerValue = currentPin.offer[SelectFiltersMap[currentSelect].offerKey];
-            if (checkType === 'equal') {
+            if (checkType === FILTER_CHECK_TYPE_EQUAL) {
               return selectorValue === offerValue;
             }
             return offerValue >= selectorValue.MIN && offerValue <= selectorValue.MAX;
@@ -100,16 +102,14 @@
     return pins;
   };
 
-  var getFilteredPins = function () {
-    // TODO: это - плохая функция. Она и наружу торчит и перефильтровывает все по вызову, а не хранит где-нибудь в глобальной для модуля переменной
-    var filteredPins = window.data.get();
-    return getFilteredBySelects(getFilteredByCheckboxes(filteredPins));
+  var filterPins = function (pins) {
+    return getFilteredBySelects(getFilteredByCheckboxes(pins));
   };
 
   var onFiltersFormChange = function () {
     window.card.remove();
     window.map.clearCurrentPins();
-    window.map.renderPins(getFilteredPins());
+    window.map.renderPins(window.data.getFiltered());
   };
 
   var onFiltersFormChangeDebounced = window.util.debounce(onFiltersFormChange);
@@ -117,6 +117,6 @@
   filtersFormEl.addEventListener('change', onFiltersFormChangeDebounced);
 
   window.filters = {
-    getPins: getFilteredPins
+    filterPins: filterPins
   };
 })();
