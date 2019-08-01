@@ -7,7 +7,6 @@
     DOWNLOAD: 'https://js.dump.academy/keksobooking/data',
     UPLOAD: 'https://js.dump.academy/keksobooking'
   };
-
   var RequestMethod = {
     GET: 'GET',
     POST: 'POST'

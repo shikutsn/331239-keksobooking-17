@@ -49,7 +49,8 @@
     window.map.setActive(false);
   };
 
-  var onResetBtnClick = function () {
+  var onResetBtnClick = function (evt) {
+    evt.preventDefault();
     resetPage();
   };
 
@@ -120,8 +121,7 @@
     }
   });
 
-  // TODO Возможно, выделить в отдельный модуль все манипуляции с файлами в форме (аватарки, перетаскивания и тд)
-  var loadImgFromDisc = function (fileEl, imageEl) {
+  var loadImgFromDisc = function (fileEl, onLoadingSuccess) {
     var file = fileEl.files[0];
     if (file) {
       var fileName = file.name.toLowerCase();
@@ -134,7 +134,7 @@
         var reader = new FileReader();
 
         reader.addEventListener('load', function () {
-          imageEl.src = reader.result;
+          onLoadingSuccess(reader.result);
         });
 
         reader.readAsDataURL(file);
@@ -143,7 +143,9 @@
   };
 
   avatarFileEl.addEventListener('change', function () {
-    loadImgFromDisc(avatarFileEl, avatarImageEl);
+    loadImgFromDisc(avatarFileEl, function (loadedFile) {
+      avatarImageEl.src = loadedFile;
+    });
   });
 
   var createImage = function () {
@@ -157,15 +159,16 @@
   };
 
   photoFileEl.addEventListener('change', function () {
-    if (!photoContainerEl.querySelector('.ad-form__photo img')) {
-      photoEl.remove();
-    }
-
-    var imageEl = createImage();
-    loadImgFromDisc(photoFileEl, imageEl);
-    var newImageEl = photoEl.cloneNode(true);
-    newImageEl.insertAdjacentElement('afterbegin', imageEl);
-    photoContainerEl.insertAdjacentElement('beforeend', newImageEl);
+    loadImgFromDisc(photoFileEl, function (loadedFile) {
+      if (!photoContainerEl.querySelector('.ad-form__photo img')) {
+        photoEl.remove();
+      }
+      var imageEl = createImage();
+      imageEl.src = loadedFile;
+      var newPhotoEl = photoEl.cloneNode(true);
+      newPhotoEl.insertAdjacentElement('afterbegin', imageEl);
+      photoContainerEl.insertAdjacentElement('beforeend', newPhotoEl);
+    });
   });
 
   window.adForm = {
