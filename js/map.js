@@ -10,6 +10,7 @@
       WIDTH: 50,
       HEIGHT: 70
     },
+    // TODO перекинуть эти ограничения в MainPinSize. И обозвать MainPinData
     COORD: {
       ABSCISS: {
         MIN: 0,
@@ -136,6 +137,48 @@
     fillAddressField(addressEl, mainPinEl, false);
   };
 
+  // ---------------------------------------
+  var Rect = function (left, top, right, bottom) {
+    this.left = left;
+    this.top = top;
+    this.right = right;
+    this.bottom = bottom;
+  };
+
+  var Coordinate = function (x, y, constraints) {
+    this.x = x;
+    this.y = y;
+    this._constraints = constraints;
+  };
+
+  Coordinate.prototype.setCoord = function (x, y) {
+    var setSingleCoord = function (coord, minValue, maxValue) {
+      if (coord < minValue) {
+        return minValue;
+      }
+      if (coord > maxValue) {
+        return maxValue;
+      }
+      return coord;
+    };
+
+    this.x = setSingleCoord(x, this._constraints.left, this._constraints.right);
+    this.y = setSingleCoord(y, this._constraints.top, this._constraints.bottom);
+  };
+
+  var coordRect = new Rect(PinData.COORD.ABSCISS.MIN, PinData.COORD.ORDINATE.MIN, PinData.COORD.ABSCISS.MAX - MainPinSize.MAP_ACTIVE.WIDTH, PinData.COORD.ORDINATE.MAX);
+  // ---------------------------------------
+
+  var getSingleCoord = function (coord, minValue, maxValue) {
+    if (coord < minValue) {
+      return minValue;
+    }
+    if (coord > maxValue) {
+      return maxValue;
+    }
+    return coord;
+  };
+
   mainPinEl.addEventListener('mousedown', function (evt) {
     if (mapEl.classList.contains(DISABLED_MAP_CLS)) {
       setMapActive(true);
@@ -144,27 +187,38 @@
       x: evt.clientX,
       y: evt.clientY
     };
+    var startPinCoord = {
+      x: mainPinEl.offsetLeft,
+      y: mainPinEl.offsetTop
+    };
 
     var onMouseMove = function (moveEvt) {
       moveEvt.preventDefault();
 
+      // if (moveEvt.clientX >= PinData.COORD.ABSCISS.MIN && moveEvt.clientX <= PinData.COORD.ABSCISS.MAX - MainPinSize.MAP_ACTIVE.WIDTH && moveEvt.clientY >= PinData.COORD.ORDINATE.MIN && moveEvt.clientY <= PinData.COORD.ORDINATE.MAX) {
       var shiftCoord = {
         x: moveEvt.clientX - startCoord.x,
         y: moveEvt.clientY - startCoord.y
       };
 
-      var newCoord = {
-        x: mainPinEl.offsetLeft + shiftCoord.x,
-        y: mainPinEl.offsetTop + shiftCoord.y
+      var newPinCoord = {
+        x: getSingleCoord(startPinCoord.x + shiftCoord.x, PinData.COORD.ABSCISS.MIN, PinData.COORD.ABSCISS.MAX - MainPinSize.MAP_ACTIVE.WIDTH),
+        y: getSingleCoord(startPinCoord.y + shiftCoord.y, PinData.COORD.ORDINATE.MIN, PinData.COORD.ORDINATE.MAX)
+        // x: startPinCoord.x + shiftCoord.x,
+        // y: startPinCoord.y + shiftCoord.y
       };
+      mainPinEl.style.left = newPinCoord.x + 'px';
+      mainPinEl.style.top = newPinCoord.y + 'px';
+
+      fillAddressField(addressEl, mainPinEl, true);
+
 
       // TODO упростить расчеты координат
       // TODO объект boundaries?
       // см лекцию 8, 50мин. Там про объекты, конструкторы, методы прототипов. Мб стоит демку там же посмотреть, даже точно стоит!
       // TODO а вообще, двигается плохо - если мышка двигается из-за границы карты, то пин ползает, не будучи привязанным к курсору мыши. Так же было в кекстаграме
-      if (newCoord.x < PinData.COORD.ABSCISS.MIN) {
-        newCoord.x = PinData.COORD.ABSCISS.MIN;
-      }
+      // newCoord.x = getSingleCoord(newCoord.x, PinData.COORD.ABSCISS.MIN, PinData.COORD.ABSCISS.MAX - MainPinSize.MAP_ACTIVE.WIDTH);
+      // newCoord.y = getSingleCoord(newCoord.y, PinData.COORD.ORDINATE.MIN, PinData.COORD.ORDINATE.MAX);
       // TODO: cделать так, чтобы поведение перетаскивания метки было как в фильтре кекстаграмма
       // запоминаем ""коорд мыши"", запоминаем коорд пина
       // на маузмуве:
@@ -173,24 +227,7 @@
       // перезаписываем ""коорд мыши""
       // меняем координаты пина (стили): если меньше ограничителя снизу, то равно ему, если больше огр сверху, то равно ему
       // иначе равно координатам пина
-      if (newCoord.x > PinData.COORD.ABSCISS.MAX - MainPinSize.MAP_ACTIVE.WIDTH) {
-        newCoord.x = PinData.COORD.ABSCISS.MAX - MainPinSize.MAP_ACTIVE.WIDTH;
-      }
-      if (newCoord.y < PinData.COORD.ORDINATE.MIN) {
-        newCoord.y = PinData.COORD.ORDINATE.MIN;
-      }
-      if (newCoord.y > PinData.COORD.ORDINATE.MAX) {
-        newCoord.y = PinData.COORD.ORDINATE.MAX;
-      }
-      mainPinEl.style.left = newCoord.x + 'px';
-      mainPinEl.style.top = newCoord.y + 'px';
 
-      fillAddressField(addressEl, mainPinEl, true);
-
-      startCoord = {
-        x: moveEvt.clientX,
-        y: moveEvt.clientY
-      };
     };
 
     var onMouseUp = function (upEvt) {
