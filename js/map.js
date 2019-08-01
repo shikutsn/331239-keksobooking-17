@@ -33,20 +33,20 @@
   };
   var MAIN_PIN_DEFAULT_STYLE = 'left: 570px; top: 375px;';
   // TODO эти константы надо переделать, логика работы функции (раз)блокировки карты сильно эволюционировала
-  var BlockStates = {
-    ACTIVE: 'active',
-    INACTIVE: 'inactive'
-  };
-  var BlockStatesMap = {
-    'active': {
-      styleAction: 'remove',
-      elementsAction: window.util.enableElement
-    },
-    'inactive': {
-      styleAction: 'add',
-      elementsAction: window.util.disableElement
-    }
-  };
+  // var BlockStates = {
+  //   ACTIVE: 'active',
+  //   INACTIVE: 'inactive'
+  // };
+  // var BlockStatesMap = {
+  //   'active': {
+  //     styleAction: 'remove',
+  //     elementsAction: window.util.enableElement
+  //   },
+  //   'inactive': {
+  //     styleAction: 'add',
+  //     elementsAction: window.util.disableElement
+  //   }
+  // };
   var DISABLED_MAP_CLS = 'map--faded';
   var DISABLED_AD_FORM_CLS = 'ad-form--disabled';
 
@@ -95,72 +95,31 @@
   var adFormInnerEls = Array.from(adFormEl.children);
   var filtersFormEl = document.querySelector('.map__filters');
   var filtersFormInnerEls = Array.from(filtersFormEl.children);
+  var mainPinEl = mapEl.querySelector('.map__pin--main');
 
-  var setMapState = function (action) {
-    mapEl.classList[BlockStatesMap[action].styleAction](DISABLED_MAP_CLS);
-    adFormEl.classList[BlockStatesMap[action].styleAction](DISABLED_AD_FORM_CLS);
-    adFormInnerEls.forEach(BlockStatesMap[action].elementsAction);
-    // TODO похоже, придется избавиться от этой мапы и такого выпендрежа с активацией карты. Сделать все вручную несколькими отдельными функциями на вкл/выкл
-    if (action === BlockStates.ACTIVE) {
-      window.validation.init();
+  var setFiltersFormActive = function (filtersFormState) {
+    if (filtersFormState) {
+      filtersFormInnerEls.forEach(window.util.enableElement);
+    } else {
+      filtersFormInnerEls.forEach(window.util.disableElement);
     }
-    if (action === BlockStates.INACTIVE) {
+  };
+
+  var setMapActive = function (mapState) {
+    if (mapState) {
+      mapEl.classList.remove(DISABLED_MAP_CLS);
+      adFormEl.classList.remove(DISABLED_AD_FORM_CLS);
+      adFormInnerEls.forEach(window.util.enableElement);
+      window.validation.init();
+    } else {
+      mapEl.classList.add(DISABLED_MAP_CLS);
+      adFormEl.classList.add(DISABLED_AD_FORM_CLS);
+      adFormInnerEls.forEach(window.util.disableElement);
       window.data.reset();
     }
   };
 
-  var setFiltersFormState = function (action) {
-    filtersFormInnerEls.forEach(BlockStatesMap[action].elementsAction);
-  };
-
-  var setMapActive = function (mapState) {
-    return mapState ? setMapState(BlockStates.ACTIVE) : setMapState(BlockStates.INACTIVE);
-  };
-
-  var setFiltersFormActive = function (filtersFormState) {
-    return filtersFormState ? setFiltersFormState(BlockStates.ACTIVE) : setFiltersFormState(BlockStates.INACTIVE);
-  };
-
-  var mainPinEl = mapEl.querySelector('.map__pin--main');
-
-  var onLoadingError = function (errorMessage) {
-    // TODO это окно ошибки показывается в двух случаях, надо бы их объединить
-    // да и mainEl и шаблон вынести за функцию
-    var mainEl = document.querySelector('main');
-    var errorTemplateEl = document.querySelector('#error').content.querySelector('.error');
-    var errorEl = errorTemplateEl.cloneNode(true);
-    var errorTextEl = errorEl.querySelector('.error__message');
-    errorTextEl.textContent = errorMessage;
-    mainEl.appendChild(errorEl);
-    var errorPopupCloseBtnEl = errorEl.querySelector('.error__button');
-
-    var removeErrorPopup = function () {
-      mainEl.removeChild(errorEl);
-      errorPopupCloseBtnEl.removeEventListener('click', onErrorPopupCloseBtnClick);
-      document.removeEventListener('click', onErrorPopupClick);
-      document.removeEventListener('keydown', onErrorEscPress);
-    };
-
-    var onErrorPopupClick = function () {
-      removeErrorPopup();
-    };
-
-    var onErrorPopupCloseBtnClick = function () {
-      removeErrorPopup();
-    };
-
-    var onErrorEscPress = function (evt) {
-      if (window.util.isEscPressed(evt)) {
-        removeErrorPopup();
-      }
-    };
-
-    document.addEventListener('click', onErrorPopupClick);
-    document.addEventListener('keydown', onErrorEscPress);
-  };
-
   var onLoadingSuccess = function (pins) {
-    // TODO вся инициализация, которая в кекстаграме в мейне должна быть тут
     setFiltersFormActive(true);
     window.data.set(pins);
     renderMapPins(pins);
@@ -171,10 +130,6 @@
     var addressY = isMapActive ? pinEl.offsetTop + MainPinSize.MAP_ACTIVE.HEIGHT : pinEl.offsetTop + MainPinSize.MAP_INACTIVE.HEIGHT;
     addressFieldEl.value = Math.round(addressX) + ', ' + addressY;
   };
-
-  // TODO а вообще, это надо бы вынести в какой-нибудь init
-  // первоначальное заполнение поля адреса при еще неактивной странице
-  fillAddressField(addressEl, mainPinEl, false);
 
   var resetMainPin = function () {
     mainPinEl.style = MAIN_PIN_DEFAULT_STYLE;
@@ -242,7 +197,7 @@
       upEvt.preventDefault();
 
       if (!window.data.isLoaded()) {
-        window.backend.download(onLoadingSuccess, onLoadingError);
+        window.backend.download(onLoadingSuccess, window.adForm.showErrorPopup);
       }
 
       fillAddressField(addressEl, mainPinEl, true);
@@ -255,8 +210,7 @@
     document.addEventListener('mouseup', onMouseUp);
   });
 
-  setMapActive(false);
-  setFiltersFormActive(false);
+  fillAddressField(addressEl, mainPinEl, false);
 
   window.map = {
     renderPins: renderMapPins,

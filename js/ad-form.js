@@ -23,17 +23,9 @@
   var photoFileEl = photoContainerEl.querySelector('#images');
   var photoEl = photoContainerEl.querySelector('.ad-form__photo');
 
-  var resetPage = function () {
-    // TODO: как-то тут вызываются функции отовсюду =(
-    // TODO: возможно, сделать одну функцию, которая вызывает методы сброса форм объявления и фильтров, если она еще где-нибудь понадобится
-    // TODO А вообще, наверное, эту функцию стоит объединить с setMapActive, ведь по сути делают они все только вместе - вкл/выкл страницу
-    adFormEl.reset();
-    filtersFormEl.reset();
-
-    // TODO выделить в отдельную функцию
-    // очистка аватарки
+  var resetUploadedImages = function () {
     avatarImageEl.src = AVATAR_DEFAULT_SRC;
-    // очистка фоток
+
     var uploadedPhotos = adFormEl.querySelectorAll('.ad-form__photo');
     uploadedPhotos.forEach(function (currentPhoto, index) {
       if (!index) {
@@ -45,10 +37,14 @@
         currentPhoto.remove();
       }
     });
+  };
 
-    window.map.clearCurrentPins();
+  var resetPage = function () {
+    adFormEl.reset();
+    filtersFormEl.reset();
+    resetUploadedImages();
     window.card.remove();
-
+    window.map.clearCurrentPins();
     window.map.resetMainPin();
     window.map.setActive(false);
   };
@@ -85,7 +81,7 @@
     document.addEventListener('keydown', onSuccessPopupEscPress);
   };
 
-  var uploadError = function () {
+  var showErrorPopup = function () {
     var errorPopupEl = errorTemplateEl.cloneNode(true);
     mainEl.appendChild(errorPopupEl);
 
@@ -120,7 +116,7 @@
     if (window.validation.form()) {
       var uploadData = new FormData(adFormEl);
       evt.preventDefault();
-      window.backend.upload(uploadData, uploadSuccess, uploadError);
+      window.backend.upload(uploadData, uploadSuccess, showErrorPopup);
     }
   });
 
@@ -161,9 +157,6 @@
   };
 
   photoFileEl.addEventListener('change', function () {
-    // TODO реализовать просмотр полноэкранных фоток и их упорядочивание перетаскиванием
-    // TODO на самом деле перетаскивание тоже пока что не поддерживается
-    // TODO да и аватарку перетащить нельзя
     if (!photoContainerEl.querySelector('.ad-form__photo img')) {
       photoEl.remove();
     }
@@ -175,4 +168,7 @@
     photoContainerEl.insertAdjacentElement('beforeend', newImageEl);
   });
 
+  window.adForm = {
+    showErrorPopup: showErrorPopup
+  };
 })();
