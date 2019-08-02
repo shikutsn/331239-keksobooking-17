@@ -1,7 +1,6 @@
 'use strict';
 
 (function () {
-  // TODO: пройтись по замечаниям Вадима из readme.md от 29.07. Поискать подобные случаи и их фикс
   var PinData = {
     MAX_COUNT: 5,
     SIZE: {

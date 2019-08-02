@@ -28,7 +28,6 @@
 
   window.data = {
     set: setData,
-    get: getData,
     reset: resetData,
     isLoaded: isDataLoaded,
     getFiltered: getFiltered
